@@ -127,6 +127,15 @@ class Page(Root):
         self.minor_tab_control.add(self.history_tab, text="History")
         self.minor_tab_control.grid(row=7, column=15)
 
+        # new search step
+        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=None)
+        self.step_new_button.pack(side="bottom", fill=tk.X)
+        # procedure search checkbutton
+        self.step_procedure_search_id = tk.IntVar()
+        self.step_procedure_search_id.set(0)
+        self.step_procedure_search_checkbutton = tk.Checkbutton(self.step_tab, text="Procedure Search", variable=self.step_procedure_search_id, font=('Arial',12))
+        self.step_procedure_search_checkbutton.pack(side="bottom", fill=tk.X)
+
         # used to save the steps the user took
         self.step_listbox = tk.Listbox(self.step_tab)
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
@@ -136,9 +145,9 @@ class Page(Root):
         self.step_listbox.config(yscrollcommand=self.step_scrollbar.set)
         self.step_scrollbar.pack(side="right", fill=tk.Y)
 
-        # new search step
-        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=None)
-        self.step_new_button.pack(side="bottom")
+
+        # show that it is non-procedural search at the starting
+        self.step_listbox.insert("end", f"Non-Procedural Search")
 
         # show all the current files inside database
         self.show_table(database.get(search="all"))
@@ -189,7 +198,10 @@ class Page(Root):
     def add_step(self):
         step = database.get_sql_step(state="current")
         print(step.step_type)
+        self.step_listbox.select_clear(tk.END)
         self.step_listbox.insert("end", f"{step.step_num}. {step.step_type}")
+        self.step_listbox.select_set(tk.END)
+
 
     def filter(self, filtertype):
         filterList = []
