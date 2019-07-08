@@ -1,13 +1,13 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import database as db
-
+import random
 
 class Root:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Files Search Engine")
-        self.window_width = 1200
+        self.window_width = 1250
         self.window_height = 800
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
@@ -35,7 +35,7 @@ class Page(Root):
         # skip the line for some spaces
         self.root.grid_rowconfigure(2, minsize=10)
         # search title
-        self.search_title = tk.LabelFrame(self.root, text="Search", font=('Arial', 16))
+        self.search_title = tk.LabelFrame(self.root, text="Search", font=('Arial', 16), height=2)
         self.search_title.grid(row=3, column=1, sticky="W")
         # search label
         self.search_label = tk.Label(self.search_title, text="Keyword :", font=('Arial', 12))
@@ -64,10 +64,12 @@ class Page(Root):
         # skip the line for some spaces
         self.search_title.grid_rowconfigure(5, minsize=10)
 
+        self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial',16))
+        self.result_title.grid(row=6, column=1, rowspan=100, columnspan=10)
         # table
-        self.treeview = ttk.Treeview(self.search_title, height=28)
-        self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
-
+        self.treeview = ttk.Treeview(self.result_title, height=28)
+        #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
+        self.treeview.pack(side="left", expand=True, fill=tk.Y)
         # set up the columns and headings
         self.treeview["columns"] = ["name", "filepath", "category"]
         self.treeview["show"] = "headings"
@@ -82,6 +84,12 @@ class Page(Root):
         # show all the current files inside database
         self.show_table(database.get(search="all"))
 
+        # treeview veritcal scroll bar
+        self.treeview_vertical_scrollbar = ttk.Scrollbar(self.result_title, orient="vertical")
+        self.treeview_vertical_scrollbar.config(command=self.treeview.yview)
+        self.treeview.config(yscrollcommand=self.treeview_vertical_scrollbar.set)
+        self.treeview_vertical_scrollbar.pack(side="right",fill=tk.Y)
+        # skip some x-dir spaces for the treeview and the filter
         self.search_title.grid_columnconfigure(12, minsize=20)
 
         # filter labelframe
@@ -123,7 +131,7 @@ class Page(Root):
         for i in range(1, 30):
             self.step_listbox.insert(i, f"Show all {i}")
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
-        self.step_scrollbar = tk.Scrollbar(self.step_tab, orient="vertical")
+        self.step_scrollbar = ttk.Scrollbar(self.step_tab, orient="vertical")
         self.step_scrollbar.config(command=self.step_listbox.yview)
         self.step_listbox.config(yscrollcommand=self.step_scrollbar.set)
         self.step_scrollbar.pack(side="right", fill=tk.Y)
@@ -204,6 +212,10 @@ database.add(name="E Solar Panel 1", filepath="files\\solar_panel_proposal_6.txt
 database.add(name="C Solar Panel 1", filepath="files\\solar_panel_proposal_1.txt", category="renewable energy")
 database.add(name="A Solar Panel 2", filepath="files\\solar_panel_proposal_2.txt", category="renewable energy")
 database.add(name="B Solar Panel 3", filepath="files\\solar_panel_proposal_3.txt", category="renewable energy")
+
+for i in range(1, 200):
+    database.add(name=f"{random.randint(1,1000)} Solar Panel", filepath=f"files\\solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy")
+
 database.add(name="Smart Lighting", filepath="files\\smart_lighting.pdf", category="smart device")
 database.add(name="IAQ Smart Device", filepath="files\\indoor_air_quality_device.pdf", category="smart device,indoor air quality")
 database.add(name="Air filter Device", filepath="files\\air_filter_device.pdf", category="indoor air quality")
