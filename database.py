@@ -21,6 +21,7 @@ class Database:
         self.conn.commit()
         print("Connected to the database")
 
+    # user can add categories for sorting the files
     def add_category(self, new_category):
         currentCategory = self.get_category()
         for category in currentCategory:
@@ -30,28 +31,34 @@ class Database:
         with self.conn:
             self.c.execute("INSERT INTO category_list VALUES (:category)", {'category': new_category.casefold()})
 
+    # get the categories designed by the users
     def get_category(self):
         with self.conn:
             self.c.execute("SELECT * FROM category_list")
             return self.c.fetchall()
 
+    # adding files detail to the files_table in the database
     def add(self, **kwargs):
-        # connection to the database
-        with self.conn:
-            # add data to the database
-            self.c.execute("INSERT INTO files_table VALUES (:name, :filepath, :category)",
-                           {
-                               'name': kwargs.get('name', None),
-                               'filepath': kwargs.get('filepath', None),
-                               'category': kwargs.get('category', None)
-                           })
+        sql = '''INSERT INTO files_table (name,filepath,category) VALUES (?,?,?)'''
+        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None))
+        self.sql_insert(sql, file_obj)
 
     def get_all_data(self):
+        # extract all data from the database
+        sql = '''SELECT * FROM files_table'''
+        return self.sql_search(sql)
+
+    def sql_insert(self, sql, file_obj):
         # connection to the database
         with self.conn:
-            # extract all data from the database
-            self.c.execute("SELECT * FROM files_table")
+            self.c.execute(sql, file_obj)
+
+    def sql_search(self, sql):
+        # connection to the database
+        with self.conn:
+            self.c.execute(sql)
             return self.c.fetchall()
+
 
     def get_filter(self, categoryList, method):
         # connection to the database
