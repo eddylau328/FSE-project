@@ -81,60 +81,70 @@ class Page(Root):
         self.treeview.column('category', width=300)
         # click on the item in treeview
         self.treeview.bind("<Double-1>", self.click_treeview_item)
-        # show all the current files inside database
-        self.show_table(database.get(search="all"))
 
         # treeview veritcal scroll bar
         self.treeview_vertical_scrollbar = ttk.Scrollbar(self.result_title, orient="vertical")
         self.treeview_vertical_scrollbar.config(command=self.treeview.yview)
         self.treeview.config(yscrollcommand=self.treeview_vertical_scrollbar.set)
         self.treeview_vertical_scrollbar.pack(side="right",fill=tk.Y)
+
         # skip some x-dir spaces for the treeview and the filter
         self.search_title.grid_columnconfigure(12, minsize=20)
 
         # filter labelframe
         row = 6
         self.filter_title = tk.LabelFrame(self.search_title, text="Filter", font=('Arial', 16))
-        self.filter_title.grid(row=row, column=13, sticky="W")
+        self.filter_title.grid(row=row, column=13, rowspan=100, sticky="W")
         # checkbuttons for the database to sort in category
         self.checkbuttons = []
-        row += 1
+        row = 0
+        column = 0
         for category in database.get_category():
-            self.add_checkbutton(self.filter_title, category[0], row=row, column=13)
+            self.add_checkbutton(self.filter_title, category[0], row=row, column=column)
             row += 1
 
         self.filter_radiobutton_id = tk.StringVar()
         self.filter_radiobutton_id.set("union")
         # union filter radiobutton
         self.filter_u_radiobutton = tk.Radiobutton(self.filter_title, text="Related", variable=self.filter_radiobutton_id, value="union")
-        self.filter_u_radiobutton.grid(row=row, column=13, sticky="W")
+        self.filter_u_radiobutton.grid(row=row, column=column, sticky="W")
         # intersection filter radiobutton
         row += 1
         self.filter_i_radiobutton = tk.Radiobutton(self.filter_title, text="Exact", variable=self.filter_radiobutton_id, value="intersect")
-        self.filter_i_radiobutton.grid(row=row, column=13, sticky="W")
+        self.filter_i_radiobutton.grid(row=row, column=column, sticky="W")
         # sort button for the database to perform sorting
         row += 1
         self.filter_button = tk.Button(self.filter_title, text="Filter", font=('Arial', 12), command=lambda: self.filter(self.filter_radiobutton_id.get()))
-        self.filter_button.grid(row=row, column=13, sticky="W")
+        self.filter_button.grid(row=row, column=column, sticky="W")
 
         self.search_title.grid_columnconfigure(14, minsize=20)
 
         # tab control for changing the page
-        self.minor_tab_control = ttk.Notebook(self.search_title, width=200, height=200)
+        self.minor_tab_control = ttk.Notebook(self.search_title, width=200, height=400)
         self.step_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.step_tab, text="Steps")
         self.history_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.history_tab, text="History")
-        self.minor_tab_control.grid(row=6, column=15)
+        self.minor_tab_control.grid(row=7, column=15)
+
         # used to save the steps the user took
         self.step_listbox = tk.Listbox(self.step_tab)
-        for i in range(1, 30):
-            self.step_listbox.insert(i, f"Show all {i}")
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
+        # step_scrollbar
         self.step_scrollbar = ttk.Scrollbar(self.step_tab, orient="vertical")
         self.step_scrollbar.config(command=self.step_listbox.yview)
         self.step_listbox.config(yscrollcommand=self.step_scrollbar.set)
         self.step_scrollbar.pack(side="right", fill=tk.Y)
+
+        # new search step
+        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=None)
+        self.step_new_button.pack(side="bottom")
+
+        # show all the current files inside database
+        self.show_table(database.get(search="all"))
+        # adding the first step of showing all the current files inside database
+        self.add_step()
+
         print("GUI display is ready")
 
         # Keep updating the GUI
@@ -176,18 +186,25 @@ class Page(Root):
         category = tk.Label(new_window, text=selectedItem.get('values')[2], font=('Arial', 12), height=2)
         category.grid(row=3, column=3, sticky="W")
 
+    def add_step(self):
+        step = database.get_sql_step(state="current")
+        print(step.step_type)
+        self.step_listbox.insert("end", f"{step.step_num}. {step.step_type}")
+
     def filter(self, filtertype):
         filterList = []
         for button in self.checkbuttons:
             if (button.value_id.get() == 1):
                 filterList.append(button.category)
         self.show_table(database.get(search="filter", keyword=filterList, method=filtertype))
+        self.add_step()
 
     def add_checkbutton(self, root, name, row, column):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column))
 
     def search(self, search_method, keyword):
         self.show_table(database.get(search=search_method, keyword=keyword))
+        self.add_step()
 
     def show_table(self, dataset):
         self.treeview.delete(*self.treeview.get_children())
@@ -206,6 +223,10 @@ database.add_category("renewable energy")
 database.add_category("smart device")
 database.add_category("indoor air quality")
 database.add_category("hydroelectric")
+database.add_category("secret")
+database.add_category("Lithium battery")
+database.add_category("vehicle")
+database.add_category("energy efficiency")
 database.add(name="D Solar Panel 1", filepath="files\\solar_panel_proposal_4.txt", category="renewable energy")
 database.add(name="F Solar Panel 1", filepath="files\\solar_panel_proposal_5.txt", category="renewable energy")
 database.add(name="E Solar Panel 1", filepath="files\\solar_panel_proposal_6.txt", category="renewable energy")
