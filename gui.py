@@ -7,7 +7,7 @@ class Root:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Files Search Engine")
-        self.window_width = 1250
+        self.window_width = 1300
         self.window_height = 800
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
@@ -28,22 +28,23 @@ class Page(Root):
     def __init__(self):
         Root.__init__(self)
         self.root.grid_rowconfigure(0, minsize=30)
-        self.root.grid_columnconfigure(0, minsize=30)
+        self.root.grid_columnconfigure(0, minsize=20)
         # Heading
         self.heading = tk.Label(self.root, text="Files Search Engine", font=('Arial', 32), height=1)
         self.heading.grid(row=1, column=1, columnspan=10, sticky="W")
         # skip the line for some spaces
         self.root.grid_rowconfigure(2, minsize=10)
+
         # search title
         self.search_title = tk.LabelFrame(self.root, text="Search", font=('Arial', 16), height=2)
         self.search_title.grid(row=3, column=1, sticky="W")
         # search label
-        self.search_label = tk.Label(self.search_title, text="Keyword :", font=('Arial', 12))
+        self.search_label = tk.Label(self.search_title, text="Keyword :", font=('Arial', 14))
         self.search_label.grid(row=4, column=1, sticky="W")
         # search
         # search_entry_id is the var saves the input string from search_entry
         self.search_entry_id = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 12))
+        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14))
         self.search_entry.grid(row=4, column=2, sticky="W")
 
         # search button
@@ -89,7 +90,7 @@ class Page(Root):
         self.treeview_vertical_scrollbar.pack(side="right",fill=tk.Y)
 
         # skip some x-dir spaces for the treeview and the filter
-        self.search_title.grid_columnconfigure(12, minsize=20)
+        self.search_title.grid_columnconfigure(12, minsize=10)
 
         # filter labelframe
         row = 6
@@ -109,15 +110,21 @@ class Page(Root):
         self.filter_u_radiobutton = tk.Radiobutton(self.filter_title, text="Related", variable=self.filter_radiobutton_id, value="union")
         self.filter_u_radiobutton.grid(row=row, column=column, sticky="W")
         # intersection filter radiobutton
-        row += 1
         self.filter_i_radiobutton = tk.Radiobutton(self.filter_title, text="Exact", variable=self.filter_radiobutton_id, value="intersect")
-        self.filter_i_radiobutton.grid(row=row, column=column, sticky="W")
-        # sort button for the database to perform sorting
+        self.filter_i_radiobutton.grid(row=row, column=column+1, sticky="W")
+        # filter button for the database to perform sorting
         row += 1
         self.filter_button = tk.Button(self.filter_title, text="Filter", font=('Arial', 12), command=lambda: self.filter(self.filter_radiobutton_id.get()))
         self.filter_button.grid(row=row, column=column, sticky="W")
 
-        self.search_title.grid_columnconfigure(14, minsize=20)
+        # disable all/ select all button for the checkbox in filter section
+        self.filter_select_disable_id = tk.StringVar()
+        self.filter_select_disable_id.set("Disable all")
+        self.filter_select_disable_button = tk.Button(self.filter_title, textvariable=self.filter_select_disable_id, font=('Arial',12), command=self.filter_checkbox_select_disable_all, width=10)
+        self.filter_select_disable_button.grid(row=row, column=column+1, sticky="W")
+
+        # skip some x-dir space
+        self.search_title.grid_columnconfigure(14, minsize=10)
 
         # tab control for changing the page
         self.minor_tab_control = ttk.Notebook(self.search_title, width=200, height=400)
@@ -159,6 +166,7 @@ class Page(Root):
 
         # Keep updating the GUI
         self.root.mainloop()
+
 
     def create_window(self, w, h):
         new_window = tk.Toplevel(self.root)
@@ -208,10 +216,11 @@ class Page(Root):
         # receive the index which the user select
         index = self.step_listbox.curselection()[0]
         # index is equal to the step num
-        sql = database.get_sql_step(index).sql
+        sql = database.get_sql_step(step_num=index).sql
         result,_ =database.sql_search(sql)
         self.show_table(database.sort(result))
 
+    # filter out different category
     def filter(self, filtertype):
         filterList = []
         for button in self.checkbuttons:
@@ -219,6 +228,17 @@ class Page(Root):
                 filterList.append(button.category)
         self.show_table(database.get(search="filter", keyword=filterList, method=filtertype))
         self.add_step()
+
+    # disable / select all the checkbutton in the filter section
+    def filter_checkbox_select_disable_all(self):
+        if (self.filter_select_disable_id.get() == "Disable all"):
+            for button in self.checkbuttons:
+                button.value_id.set(0)
+            self.filter_select_disable_id.set("Select all")
+        else:
+            for button in self.checkbuttons:
+                button.value_id.set(1)
+            self.filter_select_disable_id.set("Disable all")
 
     def add_checkbutton(self, root, name, row, column):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column))

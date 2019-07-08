@@ -114,15 +114,18 @@ class Database:
             logic = "and"
         else:
             return
-        sql = '''SELECT * FROM files_table WHERE'''
-        target = ()
-        count = 0
-        for category in categoryList:
-            sql = sql + ''' category LIKE ? '''
-            if (count < len(categoryList)-1):
-                sql = sql + logic
-            count += 1
-            target = target + ('%' + category + '%',)
+        sql = ''''''
+        target = None
+        if (categoryList != []):
+            sql = '''SELECT * FROM files_table WHERE'''
+            target = ()
+            count = 0
+            for category in categoryList:
+                sql = sql + ''' category LIKE ? '''
+                if (count < len(categoryList)-1):
+                    sql = sql + logic
+                count += 1
+                target = target + ('%' + category + '%',)
         sql = SQL(sql, target)
         return self.sql_search(sql)
 
@@ -163,8 +166,6 @@ class Database:
             return self.sort(result)
         elif (search == "filter"):
             if (keyword == None):
-                return []
-            elif (keyword == []):
                 return []
             else:
                 if (method == None):
