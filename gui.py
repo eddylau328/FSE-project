@@ -145,7 +145,8 @@ class Page(Root):
         self.step_listbox.config(yscrollcommand=self.step_scrollbar.set)
         self.step_scrollbar.pack(side="right", fill=tk.Y)
 
-
+        # add clicking event in step_listbox
+        self.step_listbox.bind('<Double-1>', self.click_step_listbox_item)
         # show that it is non-procedural search at the starting
         self.step_listbox.insert("end", f"Non-Procedural Search")
 
@@ -198,10 +199,18 @@ class Page(Root):
     def add_step(self):
         step = database.get_sql_step(state="current")
         print(step.step_type)
-        self.step_listbox.select_clear(tk.END)
+        self.step_listbox.select_clear(0, tk.END)
         self.step_listbox.insert("end", f"{step.step_num}. {step.step_type}")
         self.step_listbox.select_set(tk.END)
 
+    # event is trigger by double clicking the self.step_listbox item
+    def click_step_listbox_item(self, event):
+        # receive the index which the user select
+        index = self.step_listbox.curselection()[0]
+        # index is equal to the step num
+        sql = database.get_sql_step(index).sql
+        result,_ =database.sql_search(sql)
+        self.show_table(database.sort(result))
 
     def filter(self, filtertype):
         filterList = []
