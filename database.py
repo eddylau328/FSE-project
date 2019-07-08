@@ -53,33 +53,33 @@ class Database:
         with self.conn:
             self.c.execute(sql, file_obj)
 
-    def sql_search(self, sql):
+    def sql_search(self, sql, target=None):
         # connection to the database
         with self.conn:
-            self.c.execute(sql)
-            return self.c.fetchall()
-
+            if (target == None):
+                self.c.execute(sql)
+            else:
+                self.c.execute(sql,target)
+        return self.c.fetchall()
 
     def get_filter(self, categoryList, method):
-        # connection to the database
-        resultList = []
-        for category in categoryList:
-            with self.conn:
-                self.c.execute("SELECT * FROM files_table WHERE category LIKE ?", ('%' + category + '%',))
-                resultList.append(self.c.fetchall())
-
-        s = set()
-        if (method == "union"):
-            for result in resultList:
-                s = s.union(set(result))
-        elif (method == "intersect"):
-            if (len(resultList) > 0):
-                s = set(resultList[0])
-            for i in range(1, len(resultList)):
-                s = s.intersection(set(resultList[i]))
+        if (method == 'union'):
+            logic = "or"
+        elif (method == 'intersect'):
+            logic = "and"
         else:
-            return []
-        return list(s)
+            return
+        sql = '''SELECT * FROM files_table WHERE'''
+        target = ()
+        count = 0
+        for category in categoryList:
+            sql = sql + ''' category LIKE ? '''
+            if (count < len(categoryList)-1):
+                sql = sql + logic
+            count += 1
+            target = target + ('%' + category + '%',)
+        print(sql)
+        return self.sql_search(sql,target)
 
     def get_relate(self, keyword):
         with self.conn:
