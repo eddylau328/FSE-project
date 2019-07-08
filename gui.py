@@ -62,6 +62,10 @@ class Page(Root):
         self.exact_radiobutton = tk.Radiobutton(self.search_title, text="Exact", variable=self.search_method_id, value="exact")
         self.exact_radiobutton.grid(row=4, column=5, sticky="W")
 
+        # add button
+        self.add_button = tk.Button(self.search_title, text="Add / Delete Files", command=lambda: self.add_files())
+        self.add_button.grid(row=4, column=6, sticky="W")
+
         # skip the line for some spaces
         self.search_title.grid_rowconfigure(5, minsize=10)
 
@@ -174,6 +178,44 @@ class Page(Root):
         y_coor = (self.screen_height / 2) - (h / 2)
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
         return new_window
+
+    def add_files(self):
+        new_window = self.create_window(800, 500)
+
+        # skip some spaces in both dir
+        new_window.grid_rowconfigure(0, minsize=10)
+        new_window.grid_columnconfigure(0, minsize=10)
+
+        # frame is used to contain everything
+        frame = tk.LabelFrame(new_window, text="")
+        frame.grid(row=1, column=1)
+
+        # skip some spaces in both dir
+        frame.grid_rowconfigure(0, minsize=10)
+        frame.grid_columnconfigure(0, minsize=10)
+
+        change_title = tk.Label(frame, text="Temporary", font=('Arial',12))
+        change_title.grid(row=1, column=1)
+
+        change_listbox = tk.Listbox(frame, width=25, height=25)
+        change_listbox.grid(row=2, column=1,rowspan=100)
+
+        # move left / right button is used to shift things to database or delete things to database
+        move_left_button = tk.Button(frame, text="=>",width=1, height=1, command=None)
+        move_left_button.grid(row=1, column=2)
+        move_right_button = tk.Button(frame, text="<=",width=1, height=1, command=None)
+        move_right_button.grid(row=2, column=2)
+
+        current_title = tk.Label(frame, text="Current Database", font=('Arial',12))
+        current_title.grid(row=1, column=3)
+
+        current_listbox = tk.Listbox(frame, width=25, height=25)
+        current_listbox.grid(row=2, column=3, rowspan=100)
+
+
+#        name_title = tk.Label(frame, text="Name :", font=('Arial', 12), height=2)
+#        name_title.grid(row=1, column=2, sticky="W")
+
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())
