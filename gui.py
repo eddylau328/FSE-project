@@ -2,6 +2,90 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import database as db
 import random
+from tkinter import filedialog
+
+'''
+if get all
+    [0] => name
+    [1] => filepath
+    [2] => category
+    [3] => creator
+    [4] => description
+    [5] => create date
+    [6] => last modify
+'''
+
+class Show_Data_Package:
+    def __init__(self, frame):
+        # name title label
+        self.name_title = tk.Label(frame, text="Name :", font=('Arial', 12))
+        # name entry id
+        self.name_entry_id = tk.StringVar()
+        self.name_entry_id.set("")
+        self.name_entry = tk.Entry(frame, textvariable=self.name_entry_id, font=('Arial', 12))
+
+        # creator title label
+        self.creator_title = tk.Label(frame, text="Creator :", font=('Arial', 12))
+
+        # creator label
+        self.creator_id = tk.StringVar()
+        self.creator_id.set("")
+        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=('Arial', 12), wraplength=120, justify="left")
+
+        # category title label
+        self.category_title = tk.Label(frame, text="Category :", font=('Arial', 12))
+        # category entry id
+        self.category_id = tk.StringVar()
+        self.category_id.set("")
+        self.category_entry = tk.Entry(frame, textvariable=self.category_id, font=('Arial', 12))
+
+        # filepath label
+        self.filepath_title = tk.Label(frame, text="Filepath", font=('Arial', 12))
+
+        # current filepath id
+        self.current_filepath_id = tk.StringVar()
+        self.current_filepath_id.set("")
+        self.current_filepath = tk.Label(frame, textvariable=self.current_filepath_id, font=('Arial', 12), wraplength=120, justify="left")
+
+        # description title label
+        self.description_title = tk.Label(frame, text="Description :", font=('Arial', 12))
+
+        # description entry id
+        self.description_text = tk.Text(frame, font=('Arial', 12), height=10, width=20)
+
+    # row, column is start from corner
+    def show_name(self, row, column):
+        self.name_title.grid(row=row, column=column, sticky="W")
+        self.name_entry.grid(row=row, column=column+1, sticky="W")
+
+    # row, column is start from corner
+    def show_creator(self, row, column):
+        self.creator_title.grid(row=row, column=column, sticky="WN")
+        self.creator_label.grid(row=row, column=column+1, sticky="WN")
+
+    # row, column is start from corner
+    def show_category(self, row, column):
+        self.category_title.grid(row=row, column=column, sticky="W")
+        self.category_entry.grid(row=row, column=column+1, sticky="W")
+
+    # row, column is start from corner
+    def show_filepath(self, row, column):
+        self.filepath_title.grid(row=row, column=column, sticky="WN")
+        self.current_filepath.grid(row=row, column=column+1, sticky="WN")
+
+    # row, column is start from corner
+    def show_description(self, row, column):
+        self.description_title.grid(row=row, column=column, sticky="WN")
+        self.description_text.grid(row=row, column=column+1, sticky="W")
+
+    def set(self, name, creator, category, filepath, description):
+        self.name_entry_id.set(name)
+        self.creator_id.set(creator)
+        self.category_id.set(category)
+        self.current_filepath_id.set(filepath)
+        # clear the content in the description text box
+        self.description_text.delete('1.0', 'end')
+        self.description_text.insert("end", description)
 
 class Root:
     def __init__(self):
@@ -166,9 +250,12 @@ class Page(Root):
         self.step_listbox.insert("end", f"Non-Procedural Search")
 
         # show all the current files inside database
-        self.show_table(database.get(search="all"))
+        self.show_table(database.get(search="all", isCount=True))
         # adding the first step of showing all the current files inside database
         self.add_step()
+
+        # use to save the temporary objects
+        self.temporary_obj_list = []
 
         print("GUI display is ready")
 
@@ -216,8 +303,10 @@ class Page(Root):
 
         current_listbox = tk.Listbox(right_frame, width=25, height=23)
         current_listbox.grid(row=2, column=3, rowspan=25)
+        for data in database.get(search="all",isCount=False, select_field=['filepath']):
+            current_listbox.insert("end", f"{database.extract_filename(data[0])}")
 
-        browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12))
+        browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(change_listbox))
         browse_button.grid(row=28, column=1)
 
         # skip some spaces for the x-dir in right frame
@@ -229,34 +318,75 @@ class Page(Root):
         # left frame is the frame to contains the data of the file
         left_frame = tk.LabelFrame(new_window, text="")
         left_frame.grid(row=1, column=3)
+        # hide it first
+        left_frame.grid_forget()
 
         # skip some spaces in both dir in left_frame
         left_frame.grid_rowconfigure(0, minsize=10)
         left_frame.grid_columnconfigure(0, minsize=10)
 
-        name_title = tk.Label(left_frame, text="Name :", font=('Arial', 12))
-        name_title.grid(row=1, column=1, sticky="W")
+        data_package = Show_Data_Package(left_frame)
+        data_package.show_name(row=1, column=1)
+        data_package.show_creator(row=2, column=1)
+        data_package.show_category(row=3, column=1)
+        data_package.show_filepath(row=4, column=1)
+        data_package.show_description(row=5, column=1)
 
-        name_entry_id = tk.StringVar()
-        name_entry_id.set("")
-        name_entry = tk.Entry(left_frame, textvariable=name_entry_id, font=('Arial', 12))
-        name_entry.grid(row=1, column=2, sticky="W")
+        # binding the double click event to the current listbox
+        # search_filename -> get it from the curselection from the current_listbox
+        current_listbox.bind('<Double-1>', lambda event, left_frame=left_frame,listbox=current_listbox,data_package=data_package: self.click_current_listbox_item(event, left_frame,listbox, data_package))
 
-        filepath_title = tk.Label(left_frame, text="Filepath", font=('Arial', 12))
-        filepath_title.grid(row=2, column=1, sticky="W")
-
-        current_filepath_id = tk.StringVar()
-        name_entry_id.set("")
-        current_filepath = tk.Label(left_frame, textvariable=current_filepath_id, font=('Arial', 12))
-        current_filepath.grid(row=2, column=2, sticky="W")
+        # binding the double click event to the current listbox
+        # search_filename -> get it from the curselection from the current_listbox
+        change_listbox.bind('<Double-1>', lambda event, left_frame=left_frame,listbox=change_listbox, data_package=data_package: self.click_change_listbox_item(event, left_frame,listbox, data_package))
 
         # update button is used to update the data of the file
-        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(name_entry_id))
-        update_button.grid(row=3, column=1, columnspan=3)
+        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update())
+        update_button.grid(row=6, column=1, columnspan=3)
+
+        # closing new_window event which is clearing all the obj inside self.temporary_obj_list
+        new_window.protocol("WM_DELETE_WINDOW", lambda: self.empty_temporary(new_window))
 
 
-    def click_update(self, entry_id):
-        entry_id.set("Eddy")
+    # this is used to clear out all the things inside the temporary obj list
+    def empty_temporary(self, new_window):
+        for obj in self.temporary_obj_list:
+            print(obj.filename)
+        self.temporary_obj_list = []
+        for obj in self.temporary_obj_list:
+            print(obj.filename)
+        new_window.destroy()
+
+
+    def click_current_listbox_item(self, event, left_frame, listbox, data_package):
+        # show the left_frame
+        left_frame.grid(row=1, column=3)
+
+        # get the selecting item in current database listbox
+        search_filename = listbox.get(listbox.curselection())
+        current_path = database.get_filepath(search_filename)
+        data = database.get(search="exact", isCount=False,keyword=[current_path], select_field="all", compare_field=['filepath'])
+        data_package.set(name=data[0][0], creator=data[0][3], category=data[0][2], filepath=data[0][1], description=data[0][4])
+
+
+    def click_change_listbox_item(self, event, left_frame, listbox, data_package):
+        # show the left_frame
+        left_frame.grid(row=1, column=3)
+
+        # get the selecting item in current database listbox
+        search_filename = listbox.get(listbox.curselection())
+        current_path = database.get_filepath(search_filename)
+
+
+    def click_browse(self, change_listbox):
+        self.root.filename = filedialog.askopenfilenames(title="Select file(s)")
+        for filename in self.root.filename:
+            filename = database.extract_filename(filename)
+            change_listbox.insert("end", f"(New) {filename}")
+            self.temporary_obj_list.append(db.Data(filename=filename))
+
+    def click_update(self):
+        print("click update")
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())
@@ -287,12 +417,14 @@ class Page(Root):
         category = tk.Label(new_window, text=selectedItem.get('values')[2], font=('Arial', 12), height=2)
         category.grid(row=3, column=3, sticky="W")
 
+
     def add_step(self):
         step = database.get_sql_step(state="current")
         print(step.step_type)
         self.step_listbox.select_clear(0, tk.END)
         self.step_listbox.insert("end", f"{step.step_num}. {step.step_type}")
         self.step_listbox.select_set(tk.END)
+
 
     # event is trigger by double clicking the self.step_listbox item
     def click_step_listbox_item(self, event):
@@ -303,14 +435,16 @@ class Page(Root):
         result,_ =database.sql_search(sql)
         self.show_table(database.sort(result))
 
+
     # filter out different category
     def filter(self, filtertype):
         filterList = []
         for button in self.checkbuttons:
             if (button.value_id.get() == 1):
                 filterList.append(button.category)
-        self.show_table(database.get(search="filter", keyword=filterList, method=filtertype))
+        self.show_table(database.get(search="filter", isCount=True, keyword=filterList, method=filtertype))
         self.add_step()
+
 
     # disable / select all the checkbutton in the filter section
     def filter_checkbox_select_disable_all(self):
@@ -323,12 +457,15 @@ class Page(Root):
                 button.value_id.set(1)
             self.filter_select_disable_id.set("Disable all")
 
+
     def add_checkbutton(self, root, name, row, column):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column))
 
+
     def search(self, search_method, keyword):
-        self.show_table(database.get(search=search_method, keyword=keyword))
+        self.show_table(database.get(search=search_method,isCount=True, keyword=keyword))
         self.add_step()
+
 
     def show_table(self, dataset):
         self.treeview.delete(*self.treeview.get_children())
@@ -337,6 +474,7 @@ class Page(Root):
             self.treeview.insert("", "end", f"item{count}", values=(data[0], database.extract_filename(data[1]), data[2], data[3], data[4]))
             count += 1
         pass
+
 
     def __del__(self):
         print("GUI display is closed")
@@ -355,19 +493,19 @@ database.add_category("Lithium battery")
 database.add_category("vehicle")
 database.add_category("energy efficiency")
 
-database.add(name="D Solar Panel 1", filepath="files\\solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0,2)])
-database.add(name="F Solar Panel 1", filepath="files\\solar_panel_proposal_5.txt", category="renewable energy",creator=creators[random.randint(0,2)])
-database.add(name="E Solar Panel 1", filepath="files\\solar_panel_proposal_6.txt", category="renewable energy",creator=creators[random.randint(0,2)])
-database.add(name="C Solar Panel 1", filepath="files\\solar_panel_proposal_1.txt", category="renewable energy",creator=creators[random.randint(0,2)])
-database.add(name="A Solar Panel 2", filepath="files\\solar_panel_proposal_2.txt", category="renewable energy",creator=creators[random.randint(0,2)])
-database.add(name="B Solar Panel 3", filepath="files\\solar_panel_proposal_3.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="D Solar Panel 1", filepath="files/solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0,2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(name="F Solar Panel 1", filepath="files/solar_panel_proposal_5.txt", category="renewable energy",creator=creators[random.randint(0,2)], description="Hi hello world")
+database.add(name="E Solar Panel 1", filepath="files/solar_panel_proposal_6.txt", category="renewable energy",creator=creators[random.randint(0,2)], description="HoHo")
+database.add(name="C Solar Panel 1", filepath="files/solar_panel_proposal_1.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="A Solar Panel 2", filepath="files/solar_panel_proposal_2.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="B Solar Panel 3", filepath="files/solar_panel_proposal_3.txt", category="renewable energy",creator=creators[random.randint(0,2)])
 
-for i in range(1, 200):
-    database.add(name=f"{random.randint(1,1000)} Solar Panel", filepath=f"files\\solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+for i in range(1, 300):
+    database.add(name=f"{random.randint(1,300)} Solar Panel", filepath=f"files/solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy",creator=creators[random.randint(0,2)])
 
-database.add(name="Smart Lighting", filepath="files\\smart_lighting.pdf", category="smart device")
-database.add(name="IAQ Smart Device", filepath="files\\indoor_air_quality_device.pdf", category="smart device,indoor air quality")
-database.add(name="Air filter Device", filepath="files\\air_filter_device.pdf", category="indoor air quality")
+database.add(name="Smart Lighting", filepath="files/smart_lighting.pdf", category="smart device")
+database.add(name="IAQ Smart Device", filepath="files/indoor_air_quality_device.pdf", category="smart device,indoor air quality")
+database.add(name="Air filter Device", filepath="files/air_filter_device.pdf", category="indoor air quality")
 
 # database.print()
 gui = Page()

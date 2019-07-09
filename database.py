@@ -14,10 +14,13 @@ class DateTime:
         return currentDT.strftime("%Y-%m-%d %H:%M:%S")
 
 class Data:
-    def __init__(self, name, filepath, category):
+    def __init__(self, name=None, filename=None, filepath=None, category=None, creator=None, description=None):
         self.name = name
         self.filepath = filepath
+        self.filename = filename
         self.category = category
+        self.creator = creator
+        self.description = description
 
 class SQL:
     def __init__(self, sql, target=None):
@@ -112,9 +115,19 @@ class Database:
         sql = SQL(command, file_obj)
         self.sql_insert(sql)
 
-    def get_all_data(self):
+    def get_all_data(self, select_field=None):
         # extract all data from the database
-        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
+        if (select_field == None):
+            command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
+        else:
+            count = 0
+            command = '''SELECT '''
+            for string in select_field:
+                if (count < len(select_field) - 1):
+                    command = command + string + ''', '''
+                else:
+                    command = command + string
+            command = command + ''' FROM files_table '''
         sql = SQL(command)
         return self.sql_search(sql)
 
@@ -135,7 +148,7 @@ class Database:
                 self.c.execute(sql.command)
             else:
                 self.c.execute(sql.command,sql.target)
-        return self.c.fetchall(), sql
+        return {'data': self.c.fetchall(), 'sql':sql}
 
     def get_filter(self, categoryList, method):
         if (method == 'union'):
@@ -165,35 +178,71 @@ class Database:
         sql = SQL(command, target)
         return self.sql_search(sql)
 
-    def get_exact(self, keyword):
-        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE name=? COLLATE NOCASE'''
-        target = (keyword,)
+    def get_exact(self, keyword, select_field=None, compare_field=None):
+        command = ''''''
+        target = ()
+        if (select_field == None):
+            command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
+        elif (select_field == "all"):
+                command = '''SELECT * FROM files_table'''
+
+        if (compare_field == None):
+            command = command + ''' WHERE name=? COLLATE NOCASE'''
+            target = (keyword,)
+        else:
+            for string in compare_field:
+                command = command + ''' WHERE ''' + string + '''=? COLLATE NOCASE'''
+            for word in keyword:
+                target = target + (word,)
+        print(command)
+        print(target)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
-    def sort(self, dataset, reverse=None):
+    def sort(self, dataset, reverse=None, select_field=None):
         if (reverse == None):
-            dataset.sort(key=itemgetter(4, 0))
+            if (select_field == None):
+                dataset.sort(key=itemgetter(4, 0))
+            else:
+                if ("category" in select_field and "name" in select_field):
+                    dataset.sort(key=itemgetter(select_field.index("category"), select_field.index("name")))
+                else:
+                    return dataset
         else:
-            dataset.sort(key=itemgetter(4, 0), reverse=reverse)
+            if (select_field == None):
+                dataset.sort(key=itemgetter(4, 0), reverse=reverse)
+            else:
+                if ("category" in select_field and "name" in select_field):
+                    dataset.sort(key=itemgetter(select_field.index("category"), select_field.index("name")), reverse=reverse)
+                else:
+                    return dataset
         return dataset
 
-    def get(self, search, keyword=None, method=None):
+    # search is the method it used to search
+    # isCount is whether it needs to count a step
+    # keyword should be a list to saves the word you need to search
+    # method is the way it used to do sorting, union or intersection
+    # select_field is the field you want the database to return
+    # compare field is the field you want the database to compare your keyword to which column
+    def get(self, search, isCount, keyword=None, method=None, select_field=None, compare_field=None):
         if (search == "all"):
-            result, sql = self.get_all_data()
-            step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps()+1, sql=sql)
-            self.sql_steps.add_step(step)
-            return self.sort(result)
+            result = self.get_all_data(select_field=select_field)
+            if (isCount == True):
+                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                self.sql_steps.add_step(step)
+            return self.sort(result.get('data'), select_field=select_field)
         elif (search == "relate"):
-            result, sql = self.get_relate(keyword)
-            step = SQL_Step(step_type="Search related keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=sql)
-            self.sql_steps.add_step(step)
-            return self.sort(result)
+            result = self.get_relate(keyword)
+            if (isCount == True):
+                step = SQL_Step(step_type="Search related keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                self.sql_steps.add_step(step)
+            return self.sort(result.get('data'), select_field=select_field)
         elif (search == "exact"):
-            result, sql = self.get_exact(keyword)
-            step = SQL_Step(step_type="Search exact keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=sql)
-            self.sql_steps.add_step(step)
-            return self.sort(result)
+            result = self.get_exact(keyword, select_field=select_field, compare_field=compare_field)
+            if (isCount == True):
+                step = SQL_Step(step_type="Search exact keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                self.sql_steps.add_step(step)
+            return self.sort(result.get('data'), select_field=select_field)
         elif (search == "filter"):
             if (keyword == None):
                 return []
@@ -201,10 +250,11 @@ class Database:
                 if (method == None):
                     return []
                 else:
-                    result, sql = self.get_filter(keyword, method)
-                    step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps()+1, sql=sql)
-                    self.sql_steps.add_step(step)
-                    return self.sort(result)
+                    result = self.get_filter(keyword, method)
+                    if (isCount == True):
+                        step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                        self.sql_steps.add_step(step)
+                    return self.sort(result.get('data'),select_field=select_field)
 
     def print(self, dataset=None):
         if (dataset == None):
@@ -222,6 +272,11 @@ class Database:
 
     def extract_filename(self, path):
         return ntpath.basename(path)
+
+    # add a directory to the file, currently file directory is "files"
+    # "\\" should be adjusted to "/" (Cross-platform problem later should deal with it)
+    def get_filepath(self, filename):
+        return "files"+ "/" + filename
 
     def __del__(self):
         print("Disconnected to the database")
