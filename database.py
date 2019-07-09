@@ -3,6 +3,7 @@ from operator import itemgetter
 from itertools import groupby
 import datetime
 import ntpath
+import os
 
 
 class DateTime:
@@ -13,6 +14,7 @@ class DateTime:
         currentDT = datetime.datetime.now()
         return currentDT.strftime("%Y-%m-%d %H:%M:%S")
 
+
 class Data:
     def __init__(self, name=None, filename=None, filepath=None, category=None, creator=None, description=None):
         self.name = name
@@ -22,10 +24,23 @@ class Data:
         self.creator = creator
         self.description = description
 
+    def set(self, **kwargs):
+        self.name = kwargs.get('name', self.name)
+        self.filepath = kwargs.get('filepath', self.filepath)
+        self.filename = kwargs.get('filename', self.filename)
+        self.category = kwargs.get('category', self.category)
+        self.creator = kwargs.get('creator', self.creator)
+        self.description = kwargs.get('description', self.description)
+
+    def get(self):
+        return {'name': self.name, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description}
+
+
 class SQL:
     def __init__(self, sql, target=None):
         self.command = sql
         self.target = target
+
 
 class SQL_Solution:
     def __init__(self, is_procedure_search):
@@ -52,12 +67,14 @@ class SQL_Solution:
     def get_num_of_steps(self):
         return len(self.steps)
 
+
 class SQL_Step:
     def __init__(self, step_type, step_num, sql):
         # step_num is started from 1 to ...
         self.step_num = step_num
         self.step_type = step_type
         self.sql = sql
+
 
 class Database:
     def __init__(self):
@@ -147,8 +164,8 @@ class Database:
             if (sql.target == None):
                 self.c.execute(sql.command)
             else:
-                self.c.execute(sql.command,sql.target)
-        return {'data': self.c.fetchall(), 'sql':sql}
+                self.c.execute(sql.command, sql.target)
+        return {'data': self.c.fetchall(), 'sql': sql}
 
     def get_filter(self, categoryList, method):
         if (method == 'union'):
@@ -165,7 +182,7 @@ class Database:
             count = 0
             for category in categoryList:
                 sql = sql + ''' category LIKE ? '''
-                if (count < len(categoryList)-1):
+                if (count < len(categoryList) - 1):
                     sql = sql + logic
                 count += 1
                 target = target + ('%' + category + '%',)
@@ -184,7 +201,7 @@ class Database:
         if (select_field == None):
             command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
         elif (select_field == "all"):
-                command = '''SELECT * FROM files_table'''
+            command = '''SELECT * FROM files_table'''
 
         if (compare_field == None):
             command = command + ''' WHERE name=? COLLATE NOCASE'''
@@ -228,19 +245,19 @@ class Database:
         if (search == "all"):
             result = self.get_all_data(select_field=select_field)
             if (isCount == True):
-                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                 self.sql_steps.add_step(step)
             return self.sort(result.get('data'), select_field=select_field)
         elif (search == "relate"):
             result = self.get_relate(keyword)
             if (isCount == True):
-                step = SQL_Step(step_type="Search related keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                step = SQL_Step(step_type="Search related keyword", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                 self.sql_steps.add_step(step)
             return self.sort(result.get('data'), select_field=select_field)
         elif (search == "exact"):
             result = self.get_exact(keyword, select_field=select_field, compare_field=compare_field)
             if (isCount == True):
-                step = SQL_Step(step_type="Search exact keyword", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                step = SQL_Step(step_type="Search exact keyword", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                 self.sql_steps.add_step(step)
             return self.sort(result.get('data'), select_field=select_field)
         elif (search == "filter"):
@@ -252,9 +269,9 @@ class Database:
                 else:
                     result = self.get_filter(keyword, method)
                     if (isCount == True):
-                        step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps()+1, sql=result.get('sql'))
+                        step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                         self.sql_steps.add_step(step)
-                    return self.sort(result.get('data'),select_field=select_field)
+                    return self.sort(result.get('data'), select_field=select_field)
 
     def print(self, dataset=None):
         if (dataset == None):
@@ -270,13 +287,16 @@ class Database:
     def get_sql_history(self):
         return self.sql_history
 
-    def extract_filename(self, path):
-        return ntpath.basename(path)
+    def extract_filename(self, path, **kwargs):
+        if (kwargs.get('filetype', True) == True):
+            return ntpath.basename(path)
+        else:
+            return os.path.splitext(ntpath.basename(path))[0]
 
     # add a directory to the file, currently file directory is "files"
     # "\\" should be adjusted to "/" (Cross-platform problem later should deal with it)
     def get_filepath(self, filename):
-        return "files"+ "/" + filename
+        return "files" + "/" + filename
 
     def __del__(self):
         print("Disconnected to the database")
