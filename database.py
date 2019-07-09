@@ -1,6 +1,17 @@
 import sqlite3
 from operator import itemgetter
 from itertools import groupby
+import datetime
+import ntpath
+
+
+class DateTime:
+    def __init__(self):
+        pass
+
+    def get_current_time(self):
+        currentDT = datetime.datetime.now()
+        return currentDT.strftime("%Y-%m-%d %H:%M:%S")
 
 class Data:
     def __init__(self, name, filepath, category):
@@ -56,9 +67,21 @@ class Database:
             files_table (
                 name text,
                 filepath text,
-                category text
+                category text,
+                creator text,
+                description text,
+                create_date text,
+                last_modify text
             )""")
         self.conn.commit()
+        # File Name - saves the file name you want to set
+        # Filepath - saves the filepath
+        # Categories - saves the category of the file
+        # Creator - saves the creator name
+        # description - descripes what the file is
+        # Create date - saves the created date of the object
+        # Last Modify - saves the latest update time and date
+
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
@@ -83,14 +106,15 @@ class Database:
 
     # adding files detail to the files_table in the database
     def add(self, **kwargs):
-        command = '''INSERT INTO files_table (name,filepath,category) VALUES (?,?,?)'''
-        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None))
+        current_time = DateTime().get_current_time()
+        command = '''INSERT INTO files_table (name, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
+        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), current_time, current_time)
         sql = SQL(command, file_obj)
         self.sql_insert(sql)
 
     def get_all_data(self):
         # extract all data from the database
-        command = '''SELECT * FROM files_table'''
+        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
         sql = SQL(command)
         return self.sql_search(sql)
 
@@ -123,7 +147,7 @@ class Database:
         sql = ''''''
         target = None
         if (categoryList != []):
-            sql = '''SELECT * FROM files_table WHERE'''
+            sql = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE'''
             target = ()
             count = 0
             for category in categoryList:
@@ -136,22 +160,22 @@ class Database:
         return self.sql_search(sql)
 
     def get_relate(self, keyword):
-        command = '''SELECT * FROM files_table WHERE name LIKE ? COLLATE NOCASE'''
+        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE name LIKE ? COLLATE NOCASE'''
         target = ('%' + keyword + '%',)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
     def get_exact(self, keyword):
-        command = '''SELECT * FROM files_table WHERE name=? COLLATE NOCASE'''
+        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE name=? COLLATE NOCASE'''
         target = (keyword,)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
     def sort(self, dataset, reverse=None):
         if (reverse == None):
-            dataset.sort(key=itemgetter(2, 0))
+            dataset.sort(key=itemgetter(4, 0))
         else:
-            dataset.sort(key=itemgetter(2, 0), reverse=reverse)
+            dataset.sort(key=itemgetter(4, 0), reverse=reverse)
         return dataset
 
     def get(self, search, keyword=None, method=None):
@@ -195,6 +219,9 @@ class Database:
 
     def get_sql_history(self):
         return self.sql_history
+
+    def extract_filename(self, path):
+        return ntpath.basename(path)
 
     def __del__(self):
         print("Disconnected to the database")

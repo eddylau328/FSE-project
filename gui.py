@@ -7,7 +7,7 @@ class Root:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Files Search Engine")
-        self.window_width = 1300
+        self.window_width = 1360
         self.window_height = 800
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
@@ -76,13 +76,17 @@ class Page(Root):
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
         self.treeview.pack(side="left", expand=True, fill=tk.Y)
         # set up the columns and headings
-        self.treeview["columns"] = ["name", "filepath", "category"]
+        self.treeview["columns"] = ["name", "filepath", "creator", "last_modify", "category"]
         self.treeview["show"] = "headings"
-        self.treeview.heading("name", text="Name")
-        self.treeview.heading("filepath", text="File Path")
+        self.treeview.heading("name", text="Title")
+        self.treeview.heading("filepath", text="File Name")
+        self.treeview.heading("creator", text="Creator")
+        self.treeview.heading("last_modify", text="Last Modify")
         self.treeview.heading("category", text="Category")
         self.treeview.column('name', width=150)
-        self.treeview.column('filepath', width=300)
+        self.treeview.column('filepath', width=200)
+        self.treeview.column('creator', width=100)
+        self.treeview.column('last_modify', width=100)
         self.treeview.column('category', width=300)
         # click on the item in treeview
         self.treeview.bind("<Double-1>", self.click_treeview_item)
@@ -94,7 +98,7 @@ class Page(Root):
         self.treeview_vertical_scrollbar.pack(side="right",fill=tk.Y)
 
         # skip some x-dir spaces for the treeview and the filter
-        self.search_title.grid_columnconfigure(12, minsize=10)
+        self.search_title.grid_columnconfigure(12, minsize=5)
 
         # filter labelframe
         row = 6
@@ -128,10 +132,10 @@ class Page(Root):
         self.filter_select_disable_button.grid(row=row, column=column+1, sticky="W")
 
         # skip some x-dir space
-        self.search_title.grid_columnconfigure(14, minsize=10)
+        self.search_title.grid_columnconfigure(14, minsize=5)
 
         # tab control for changing the page
-        self.minor_tab_control = ttk.Notebook(self.search_title, width=200, height=400)
+        self.minor_tab_control = ttk.Notebook(self.search_title, width=160, height=400)
         self.step_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.step_tab, text="Steps")
         self.history_tab = ttk.Frame(self.minor_tab_control)
@@ -330,7 +334,7 @@ class Page(Root):
         self.treeview.delete(*self.treeview.get_children())
         count = 1
         for data in dataset:
-            self.treeview.insert("", "end", f"item{count}", values=(data[0], data[1], data[2]))
+            self.treeview.insert("", "end", f"item{count}", values=(data[0], database.extract_filename(data[1]), data[2], data[3], data[4]))
             count += 1
         pass
 
@@ -339,6 +343,9 @@ class Page(Root):
 
 
 database = db.Database()
+
+creators = ['Eddy', 'Ken', 'Alan']
+
 database.add_category("renewable energy")
 database.add_category("smart device")
 database.add_category("indoor air quality")
@@ -347,15 +354,16 @@ database.add_category("secret")
 database.add_category("Lithium battery")
 database.add_category("vehicle")
 database.add_category("energy efficiency")
-database.add(name="D Solar Panel 1", filepath="files\\solar_panel_proposal_4.txt", category="renewable energy")
-database.add(name="F Solar Panel 1", filepath="files\\solar_panel_proposal_5.txt", category="renewable energy")
-database.add(name="E Solar Panel 1", filepath="files\\solar_panel_proposal_6.txt", category="renewable energy")
-database.add(name="C Solar Panel 1", filepath="files\\solar_panel_proposal_1.txt", category="renewable energy")
-database.add(name="A Solar Panel 2", filepath="files\\solar_panel_proposal_2.txt", category="renewable energy")
-database.add(name="B Solar Panel 3", filepath="files\\solar_panel_proposal_3.txt", category="renewable energy")
+
+database.add(name="D Solar Panel 1", filepath="files\\solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0,2)])
+database.add(name="F Solar Panel 1", filepath="files\\solar_panel_proposal_5.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="E Solar Panel 1", filepath="files\\solar_panel_proposal_6.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="C Solar Panel 1", filepath="files\\solar_panel_proposal_1.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="A Solar Panel 2", filepath="files\\solar_panel_proposal_2.txt", category="renewable energy",creator=creators[random.randint(0,2)])
+database.add(name="B Solar Panel 3", filepath="files\\solar_panel_proposal_3.txt", category="renewable energy",creator=creators[random.randint(0,2)])
 
 for i in range(1, 200):
-    database.add(name=f"{random.randint(1,1000)} Solar Panel", filepath=f"files\\solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy")
+    database.add(name=f"{random.randint(1,1000)} Solar Panel", filepath=f"files\\solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy",creator=creators[random.randint(0,2)])
 
 database.add(name="Smart Lighting", filepath="files\\smart_lighting.pdf", category="smart device")
 database.add(name="IAQ Smart Device", filepath="files\\indoor_air_quality_device.pdf", category="smart device,indoor air quality")
