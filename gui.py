@@ -63,7 +63,7 @@ class Page(Root):
         self.exact_radiobutton.grid(row=4, column=5, sticky="W")
 
         # add button
-        self.add_button = tk.Button(self.search_title, text="Add / Delete Files", command=lambda: self.add_files())
+        self.add_button = tk.Button(self.search_title, text="Add / Delete Files", command=lambda: self.add_delete_modify_files())
         self.add_button.grid(row=4, column=6, sticky="W")
 
         # skip the line for some spaces
@@ -179,7 +179,8 @@ class Page(Root):
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
         return new_window
 
-    def add_files(self):
+    # Add / delete / modify files Window
+    def add_delete_modify_files(self):
         new_window = self.create_window(800, 500)
 
         # skip some spaces in both dir
@@ -187,35 +188,71 @@ class Page(Root):
         new_window.grid_columnconfigure(0, minsize=10)
 
         # frame is used to contain everything
-        frame = tk.LabelFrame(new_window, text="")
-        frame.grid(row=1, column=1)
+        right_frame = tk.LabelFrame(new_window, text="")
+        right_frame.grid(row=1, column=1, rowspan=500)
 
-        # skip some spaces in both dir
-        frame.grid_rowconfigure(0, minsize=10)
-        frame.grid_columnconfigure(0, minsize=10)
+        # skip some spaces in both dir in right_frame
+        right_frame.grid_rowconfigure(0, minsize=10)
+        right_frame.grid_columnconfigure(0, minsize=10)
 
-        change_title = tk.Label(frame, text="Temporary", font=('Arial',12))
+        change_title = tk.Label(right_frame, text="Temporary", font=('Arial',12))
         change_title.grid(row=1, column=1)
 
-        change_listbox = tk.Listbox(frame, width=25, height=25)
-        change_listbox.grid(row=2, column=1,rowspan=100)
+        change_listbox = tk.Listbox(right_frame, width=25, height=23)
+        change_listbox.grid(row=2, column=1,rowspan=25)
 
         # move left / right button is used to shift things to database or delete things to database
-        move_left_button = tk.Button(frame, text="=>",width=1, height=1, command=None)
+        move_left_button = tk.Button(right_frame, text="=>",width=1, height=1, command=None)
         move_left_button.grid(row=1, column=2)
-        move_right_button = tk.Button(frame, text="<=",width=1, height=1, command=None)
+        move_right_button = tk.Button(right_frame, text="<=",width=1, height=1, command=None)
         move_right_button.grid(row=2, column=2)
 
-        current_title = tk.Label(frame, text="Current Database", font=('Arial',12))
+        current_title = tk.Label(right_frame, text="Current Database", font=('Arial',12))
         current_title.grid(row=1, column=3)
 
-        current_listbox = tk.Listbox(frame, width=25, height=25)
-        current_listbox.grid(row=2, column=3, rowspan=100)
+        current_listbox = tk.Listbox(right_frame, width=25, height=23)
+        current_listbox.grid(row=2, column=3, rowspan=25)
+
+        browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12))
+        browse_button.grid(row=28, column=1)
+
+        # skip some spaces for the x-dir in right frame
+        right_frame.grid_columnconfigure(4, minsize=10)
+
+        # skip some spaces for the x-dir in new_window
+        new_window.grid_columnconfigure(2, minsize=10)
+
+        # left frame is the frame to contains the data of the file
+        left_frame = tk.LabelFrame(new_window, text="")
+        left_frame.grid(row=1, column=3)
+
+        # skip some spaces in both dir in left_frame
+        left_frame.grid_rowconfigure(0, minsize=10)
+        left_frame.grid_columnconfigure(0, minsize=10)
+
+        name_title = tk.Label(left_frame, text="Name :", font=('Arial', 12))
+        name_title.grid(row=1, column=1, sticky="W")
+
+        name_entry_id = tk.StringVar()
+        name_entry_id.set("")
+        name_entry = tk.Entry(left_frame, textvariable=name_entry_id, font=('Arial', 12))
+        name_entry.grid(row=1, column=2, sticky="W")
+
+        filepath_title = tk.Label(left_frame, text="Filepath", font=('Arial', 12))
+        filepath_title.grid(row=2, column=1, sticky="W")
+
+        current_filepath_id = tk.StringVar()
+        name_entry_id.set("")
+        current_filepath = tk.Label(left_frame, textvariable=current_filepath_id, font=('Arial', 12))
+        current_filepath.grid(row=2, column=2, sticky="W")
+
+        # update button is used to update the data of the file
+        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(name_entry_id))
+        update_button.grid(row=3, column=1, columnspan=3)
 
 
-#        name_title = tk.Label(frame, text="Name :", font=('Arial', 12), height=2)
-#        name_title.grid(row=1, column=2, sticky="W")
-
+    def click_update(self, entry_id):
+        entry_id.set("Eddy")
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())

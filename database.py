@@ -2,6 +2,12 @@ import sqlite3
 from operator import itemgetter
 from itertools import groupby
 
+class Data:
+    def __init__(self, name, filepath, category):
+        self.name = name
+        self.filepath = filepath
+        self.category = category
+
 class SQL:
     def __init__(self, sql, target=None):
         self.command = sql
