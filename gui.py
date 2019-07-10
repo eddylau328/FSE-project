@@ -54,8 +54,11 @@ if get all
 
 class Show_Data_Package:
     def __init__(self, frame):
+        # used to compare
         self.data = db.Data()
+        # used to compare
         self.new_data = db.Data()
+
         self.GUI = GUI(get_platform())
         # name title label
         self.name_title = tk.Label(frame, text="Name :", font=('Arial', self.GUI.modify_leftframe_font))
@@ -413,19 +416,13 @@ class Page(Root):
         change_title = tk.Label(right_frame, text="Temporary", font=('Arial', 12))
         change_title.grid(row=1, column=1)
 
-        change_listbox = tk.Listbox(right_frame, width=self.GUI.modify_listbox_width, height=25)
+        change_listbox = tk.Listbox(right_frame, selectmode="extended", width=self.GUI.modify_listbox_width, height=25)
         change_listbox.grid(row=2, column=1, rowspan=25)
-
-        # move left / right button is used to shift things to database or delete things to database
-        move_left_button = tk.Button(right_frame, text="=>", width=2, height=1, command=None)
-        move_left_button.grid(row=13, column=2, padx=5)
-        move_right_button = tk.Button(right_frame, text="<=", width=2, height=1, command=None)
-        move_right_button.grid(row=14, column=2, padx=5)
 
         current_title = tk.Label(right_frame, text="Current Database", font=('Arial', 12))
         current_title.grid(row=1, column=3)
 
-        current_listbox = tk.Listbox(right_frame, width=self.GUI.modify_listbox_width, height=25)
+        current_listbox = tk.Listbox(right_frame, selectmode="extended", width=self.GUI.modify_listbox_width, height=25)
         current_listbox.grid(row=2, column=3, rowspan=25)
         for data in database.get(search="all", isCount=False, select_field=['filepath']):
             current_listbox.insert("end", f"{database.extract_filename(data[0])}")
@@ -458,7 +455,7 @@ class Page(Root):
         update_button.grid(row=6, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
         # save button is used to save the data currently
-        save_button = tk.Button(left_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save())
+        save_button = tk.Button(left_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
         save_button.grid(row=6, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
 
@@ -469,6 +466,12 @@ class Page(Root):
         # binding the double click event to the current listbox
         # search_filename -> get it from the curselection from the current_listbox
         change_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=change_listbox, data_package=data_package: self.click_change_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
+
+        # move left / right button is used to shift things to database or delete things to database
+        move_in_button = tk.Button(right_frame, text="=>", width=2, height=1, command=None)
+        move_in_button.grid(row=13, column=2, padx=5)
+        move_out_button = tk.Button(right_frame, text="<=", width=2, height=1, command=lambda: self.click_move_out(left_frame, data_package, change_listbox, current_listbox))
+        move_out_button.grid(row=14, column=2, padx=5)
 
         # closing new_window event which is clearing all the obj inside self.temporary_obj_list
         new_window.protocol("WM_DELETE_WINDOW", lambda: self.empty_temporary(new_window))
@@ -523,11 +526,51 @@ class Page(Root):
                 selected_dict = dictionary
                 break
 
-        # check whether the item in temporary location is old or new
-        if (selected_dict.get('type') == "new"):
-            data_package.set(**selected_dict.get('data').get())
-        elif (selected_dict.get('type') == "old"):
-            pass
+        # Show the data by sending the data to data_package.set() methods
+        print(selected_dict.get('data').get())
+        data_package.set(**selected_dict.get('data').get())
+
+
+    def click_move_out(self, left_frame, data_package, change_listbox, current_listbox):
+        # show the left_frame
+        left_frame.grid_forget()
+        # move the item from current listbox to change listbox
+        delete_item = 0
+        for selected_item in current_listbox.curselection():
+            delete_item += 1
+            # get the item in current_listbox
+            selected_filename = current_listbox.get(selected_item)
+
+            current_path = database.get_filepath(selected_filename)
+            data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
+
+            # delete data from database
+            database.delete_data(current_path)
+
+            # this is not a good format vvvvvvvv
+            dataDict = {
+                'name': data[0][0],
+                'category': data[0][2],
+                'filename': database.extract_filename(selected_filename, filetype=False),
+                'filepath': data[0][1],
+                'creator': data[0][3],
+                'description': data[0][4],
+                'created_date': data[0][5],
+                'last_modify': data[0][6]
+            }
+            # later need change ^^^^^^^^
+            index = change_listbox.index("end")
+            change_listbox.insert("end", f"{selected_filename}")
+            self.temporary_obj_list.append({ 'data':db.Data(**dataDict),'type':"old", 'index':index})
+
+        # delete item in from current listbox
+        for delete_item in range(0, delete_item):
+            print(current_listbox.curselection()[0])
+            current_listbox.delete(current_listbox.curselection()[0])
+        current_listbox.select_clear(0, "end")
+
+        # update treeview after you removing something in database
+        self.show_table(database.get(search="all", isCount=False))
 
 
     def click_browse(self, window, change_listbox):
@@ -539,6 +582,13 @@ class Page(Root):
             index = change_listbox.index("end")
             change_listbox.insert("end", f"(New) {filename}")
             self.temporary_obj_list.append({ 'data':db.Data(filename=database.extract_filename(filepath, filetype=False), filepath=filepath),'type':"new", 'index':index})
+
+
+    # click save button (it should be saving temporary, not in the database)
+    def click_save(self, data_package, listbox):
+        selected_index = listbox.index(listbox.curselection())
+        data_package.update_new_data()
+        self.temporary_obj_list[selected_index]['data'].set(**data_package.new_data.get())
 
 
     # click update button
@@ -666,7 +716,7 @@ database.add(name="C Solar Panel 1", filepath="files/solar_panel_proposal_1.txt"
 database.add(name="A Solar Panel 2", filepath="files/solar_panel_proposal_2.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 database.add(name="B Solar Panel 3", filepath="files/solar_panel_proposal_3.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-for i in range(1, 300):
+for i in range(1, 10):
     database.add(name=f"{random.randint(1,300)} Solar Panel", filepath=f"files/solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 database.add(name="Smart Lighting", filepath="files/smart_lighting.pdf", category="smart device")

@@ -153,9 +153,9 @@ class Database:
     def add(self, **kwargs):
         current_time = DateTime().get_current_time()
         command = '''INSERT INTO files_table (name, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
-        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), current_time, current_time)
+        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), kwargs.get('current_time',current_time), current_time)
         sql = SQL(command, file_obj)
-        self.sql_insert(sql)
+        self.sql_action(sql)
 
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
@@ -163,9 +163,13 @@ class Database:
         target = (kwargs.get('name'), kwargs.get('filepath'), kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
         sql = SQL(command, target)
 
-        with self.conn:
-            self.c.execute(sql.command, sql.target)
+        self.sql_action(sql)
 
+    def delete_data(self, original_filepath):
+        command = '''DELETE FROM files_table WHERE filepath = ?'''
+        target = (original_filepath,)
+        sql = SQL(command, target)
+        self.sql_action(sql)
 
     def get_all_data(self, select_field=None):
         # extract all data from the database
@@ -183,15 +187,11 @@ class Database:
         sql = SQL(command)
         return self.sql_search(sql)
 
-    def sql_insert(self, sql):
+    # can insert, can delete, can update
+    def sql_action(self, sql):
         # connection to the database
         with self.conn:
-            if (sql.command != None and sql.target != None):
-                self.c.execute(sql.command, sql.target)
-            elif (sql.command != None):
-                self.c.execute(sql.command)
-            else:
-                return
+            self.c.execute(sql.command, sql.target)
 
     def sql_search(self, sql):
         # connection to the database
