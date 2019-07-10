@@ -16,15 +16,15 @@ class DateTime:
 
 
 class Data:
-    def __init__(self, name=None, filename=None, filepath=None, category=None, creator=None, description=None, create_date=None, last_modify=None):
-        self.name = name
-        self.filepath = filepath
-        self.filename = filename
-        self.category = category
-        self.creator = creator
-        self.description = description
-        self.last_modify = last_modify
-        self.create_date = create_date
+    def __init__(self, **kwargs):
+        self.name = kwargs.get('name', None)
+        self.filepath = kwargs.get('filepath', None)
+        self.filename = kwargs.get('filename', None)
+        self.category = kwargs.get('category', None)
+        self.creator = kwargs.get('creator', None)
+        self.description = kwargs.get('description', None)
+        self.last_modify =  kwargs.get('last_modify', None)
+        self.create_date = kwargs.get('create_date', None)
 
     def set(self, **kwargs):
 
@@ -157,12 +157,15 @@ class Database:
         sql = SQL(command, file_obj)
         self.sql_insert(sql)
 
-    def update_data(self, orginal_filepath, **kwargs):
+    def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
+        command = '''UPDATE files_table SET name = ?, filepath = ?, category = ?, description = ?, last_modify = ? WHERE filepath =?'''
+        target = (kwargs.get('name'), kwargs.get('filepath'), kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
+        sql = SQL(command, target)
+
         with self.conn:
-            self.c.execute("SELECT id FROM files_table WHERE filepath = ?", (orginal_filepath,))
-            data_id = self.c.fetchall()[0][0]
-        print(data_id)
+            self.c.execute(sql.command, sql.target)
+
 
     def get_all_data(self, select_field=None):
         # extract all data from the database

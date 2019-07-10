@@ -56,6 +56,7 @@ if get all
 class Show_Data_Package:
     def __init__(self, frame):
         self.data = db.Data()
+        self.new_data = db.Data()
         self.GUI = GUI(get_platform())
         # name title label
         self.name_title = tk.Label(frame, text="Name :", font=('Arial', self.GUI.modify_leftframe_font))
@@ -138,7 +139,10 @@ class Show_Data_Package:
         filename = kwargs.get('filename', None)
         filepath = kwargs.get('filepath', None)
         description = kwargs.get('description', None)
+
         self.data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
+        self.new_data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
+
         self.name_entry_id.set(name)
         self.creator_id.set(creator)
         self.category_id.set(category)
@@ -149,24 +153,30 @@ class Show_Data_Package:
         if (description != None):
             self.description_text.insert("end", description)
 
+    def update_new_data(self):
+        dataset = {
+            'name' : self.name_entry_id.get(),
+            'filepath' : self.current_filepath_id.get(),
+            'filename' : self.current_filename_id.get(),
+            'category' : self.category_id.get(),
+            'creator' : self.creator_id.get(),
+            'description' : self.description_text.get("1.0", "end-1c")
+        }
+        self.new_data.set(**dataset)
+
     def compare_value(self):
         dataset = self.data.get()
+        newdataset = self.new_data.get()
         isSame = True
-        if (dataset['name'] != self.name_entry_id.get()):
-            print("pass1")
+        if (dataset['name'] != newdataset['name']):
             isSame = False
-        if (dataset['filename'] != self.current_filename_id.get()):
-            print("pass2")
+        if (dataset['filename'] != newdataset['filename']):
             isSame = False
-        if (dataset['filepath'] != self.current_filepath_id.get()):
-            print("pass3")
+        if (dataset['filepath'] != newdataset['filepath']):
             isSame = False
-        if (dataset['category'] != self.category_id.get()):
-            print("pass4")
+        if (dataset['category'] != newdataset['category']):
             isSame = False
-        if (dataset['description'].replace(" ", "") != self.description_text.get("1.0", "end-1c").replace(" ","")):
-            print("'"+dataset['description']+"'")
-            print("'"+self.description_text.get("1.0", "end")+"'")
+        if (dataset['description'] != newdataset['description']):
             isSame = False
         return isSame
 
@@ -475,6 +485,7 @@ class Page(Root):
         search_filename = listbox.get(listbox.curselection())
         current_path = database.get_filepath(search_filename)
 
+
     def click_browse(self, window, change_listbox):
         window.filename = filedialog.askopenfilenames(title="Select file(s)")
         window.deiconify()
@@ -483,9 +494,17 @@ class Page(Root):
             change_listbox.insert("end", f"(New) {filename}")
             self.temporary_obj_list.append(db.Data(filename=filename))
 
+    # click update button
     def click_update(self, data_package):
         print("click update")
-        print(data_package.compare_value())
+        # before comparing value update the new data set, if anything in the Entry is different
+        data_package.update_new_data()
+
+        # return True then no different, return False then have difference
+        if (data_package.compare_value() == False):
+            # have difference, needs to update the database
+            database.update_data(original_filepath=data_package.data.get()['filepath'], **data_package.new_data.get())
+            self.show_table(database.get(search="all", isCount=False))
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())
