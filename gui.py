@@ -427,8 +427,9 @@ class Page(Root):
         for data in database.get(search="all", isCount=False, select_field=['filepath']):
             current_listbox.insert("end", f"{database.extract_filename(data[0])}")
 
+        # browse button is used to browse file to open in change_listbox
         browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(new_window, change_listbox))
-        browse_button.grid(row=28, column=1)
+        browse_button.grid(row=28, column=1, columnspan=2, sticky="W")
 
         # skip some spaces for the x-dir in right frame
         right_frame.grid_columnconfigure(4, minsize=10)
@@ -449,6 +450,10 @@ class Page(Root):
         data_package.show_filename(row=3, column=1)
         data_package.show_filepath(row=4, column=1)
         data_package.show_description(row=5, column=1)
+
+        # delete button is used to delete file in change_listbox
+        delete_button = tk.Button(right_frame, text="Delete file", font=('Arial', 12), command=lambda: self.click_delete(left_frame, data_package, change_listbox))
+        delete_button.grid(row=28, column=1, sticky="E")
 
         # update button is used to update the data of the file
         update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
@@ -522,20 +527,53 @@ class Page(Root):
 
         # get the selecting item in current database listbox
         selected_index = listbox.index(listbox.curselection())
-        selected_dict = {}
-        for dictionary in self.temporary_obj_list:
-            if (dictionary.get('index') == selected_index):
-                # get the selected item from the temporary obj list
-                selected_dict = dictionary
-                break
+        # get the selected item from the temporary obj list
+        selected_dict = self.temporary_obj_list[selected_index]
 
         # Show the data by sending the data to data_package.set() methods
         print(selected_dict.get('data').get())
         data_package.set(**selected_dict.get('data').get())
 
 
+    def click_move_in(self, left_frame, data_package, change_listbox, current_listbox):
+        # close the left_frame
+        left_frame.grid_forget()
+        data_package.reset()
+
+        # move the item from change listbox to current listbox
+
+        remove_index_list = []
+        remove_num = 0
+        # used to count the number of remove items and remove items index
+        for selected_item in change_listbox.curselection():
+            remove_num += 1
+            remove_index_list.append(change_listbox.index(selected_item))
+
+        # delete item in from current listbox
+        for delete_item in range(0, remove_num):
+            change_listbox.delete(change_listbox.curselection()[0])
+        change_listbox.select_clear(0, "end")
+
+        # add data to the database
+        for index in remove_index_list:
+            selected_dict = self.temporary_obj_list[index]
+            if (selected_dict['type'] == "new"):
+                database.add(selected_dict['data'].get())
+
+        #################################################################################
+        #################################################################################
+
+        # delete obj in temporary_obj_list
+        for index in sorted(remove_index_list, reverse = True):
+            self.temporary_obj_list.pop(index)
+
+        # update treeview after you removing something in database
+        self.show_table(database.get(search="all", isCount=False))
+
+
+
     def click_move_out(self, left_frame, data_package, change_listbox, current_listbox):
-        # show the left_frame
+        # close the left_frame
         left_frame.grid_forget()
         data_package.reset()
         # move the item from current listbox to change listbox
@@ -547,9 +585,6 @@ class Page(Root):
 
             current_path = database.get_filepath(selected_filename)
             data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
-
-            # delete data from database
-            database.delete_data(current_path)
 
             # this is not a good format vvvvvvvv
             dataDict = {
@@ -563,48 +598,58 @@ class Page(Root):
                 'last_modify': data[0][6]
             }
             # later need change ^^^^^^^^
-            index = change_listbox.index("end")
+
             change_listbox.insert("end", f"{selected_filename}")
-            self.temporary_obj_list.append({ 'data':db.Data(**dataDict),'type':"old", 'index':index})
+            self.temporary_obj_list.append({ 'data':db.Data(**dataDict),'type':"old"})
 
         # delete item in from current listbox
         for delete_item in range(0, delete_item):
-            print(current_listbox.curselection()[0])
             current_listbox.delete(current_listbox.curselection()[0])
         current_listbox.select_clear(0, "end")
 
-        # update treeview after you removing something in database
-        self.show_table(database.get(search="all", isCount=False))
 
-
+    # click browse to browse files
     def click_browse(self, window, change_listbox):
         window.filename = filedialog.askopenfilenames(title="Select file(s)")
         window.deiconify()
         for filepath in window.filename:
             filename = database.extract_filename(filepath)
             # get the latest index for the inserting
-            index = change_listbox.index("end")
             change_listbox.insert("end", f"(New) {filename}")
-            self.temporary_obj_list.append({ 'data':db.Data(filename=database.extract_filename(filepath, filetype=False), filepath=filepath),'type':"new", 'index':index})
+            self.temporary_obj_list.append({'data':db.Data(filename=database.extract_filename(filepath, filetype=False), filepath=filepath),'type':"new"})
 
 
-#    def click_delete(self, left_frame, data_package, change_listbox):
-#        left_frame.grid_forget()
-#
-#        # saves the index to remove items in self.temporary_obj_list
-#        remove_index_list = []
-#        remove_num = 0
-#        # used to count the number of remove items and remove items index
-#        for selected_item in change_listbox.curselection():
-#            remove_num += 1
-#            remove_index_list.append(change_listbox.index(change_listbox.curselection()))
+    # click delete files in change_listbox
+    def click_delete(self, left_frame, data_package, change_listbox):
+        left_frame.grid_forget()
 
-#        # delete item in from current listbox
-#        for delete_item in range(0, delete_item):
-#            print(current_listbox.curselection()[0])
-#            current_listbox.delete(current_listbox.curselection()[0])
-#        current_listbox.select_clear(0, "end")
+        # saves the index to remove items in self.temporary_obj_list
+        remove_index_list = []
+        remove_num = 0
 
+        # used to count the number of remove items and remove items index
+        for selected_item in change_listbox.curselection():
+            remove_num += 1
+            remove_index_list.append(change_listbox.index(selected_item))
+
+        # delete item in from current listbox
+        for delete_item in range(0, remove_num):
+            change_listbox.delete(change_listbox.curselection()[0])
+        change_listbox.select_clear(0, "end")
+
+        # delete data from database
+        for index in remove_index_list:
+            # "old" is the data from the database
+            if (self.temporary_obj_list[index].get('type') == "old"):
+                delete_file_path = self.temporary_obj_list[index]['data'].get()['filepath']
+                database.delete_data(delete_file_path)
+
+        # delete obj in temporary_obj_list
+        for index in sorted(remove_index_list, reverse = True):
+            self.temporary_obj_list.pop(index)
+
+        # update treeview after you removing something in database
+        self.show_table(database.get(search="all", isCount=False))
 
 
 
