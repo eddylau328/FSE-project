@@ -52,7 +52,6 @@ if get all
     [6] => last modify
 '''
 
-
 class Show_Data_Package:
     def __init__(self, frame):
         self.data = db.Data()
@@ -143,11 +142,27 @@ class Show_Data_Package:
         self.data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
         self.new_data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
 
-        self.name_entry_id.set(name)
-        self.creator_id.set(creator)
-        self.category_id.set(category)
-        self.current_filename_id.set(filename)
-        self.current_filepath_id.set(filepath)
+        if (name != None):
+            self.name_entry_id.set(name)
+        else:
+            self.name_entry_id.set("")
+        if ( creator != None):
+            self.creator_id.set(creator)
+        else:
+            self.creator_id.set("")
+        if (category != None):
+            self.category_id.set(category)
+        else:
+            self.category_id.set("")
+        if (filename != None):
+            self.current_filename_id.set(filename)
+        else:
+            self.current_filename_id.set("")
+        if (filepath != None):
+            self.current_filepath_id.set(filepath)
+        else:
+            self.current_filepath_id.set("")
+
         # clear the content in the description text box
         self.description_text.delete('1.0', 'end')
         if (description != None):
@@ -179,6 +194,17 @@ class Show_Data_Package:
         if (dataset['description'] != newdataset['description']):
             isSame = False
         return isSame
+
+
+    def reset(self):
+        self.name_entry_id.set("")
+        self.current_filename_id.set("")
+        self.current_filepath_id.set("")
+        self.category_id.set("")
+        self.creator_id.set("")
+        self.description_text.delete("1.0", "end")
+        self.data = db.Data()
+        self.new_data = db.Data()
 
 
 class Root:
@@ -359,12 +385,14 @@ class Page(Root):
         # Keep updating the GUI
         self.root.mainloop()
 
+
     def create_window(self, w, h):
         new_window = tk.Toplevel(self.root)
         x_coor = (self.screen_width / 2) - (w / 2)
         y_coor = (self.screen_height / 2) - (h / 2)
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
         return new_window
+
 
     # Add / delete / modify files Window
     def add_delete_modify_files(self):
@@ -445,14 +473,14 @@ class Page(Root):
         # closing new_window event which is clearing all the obj inside self.temporary_obj_list
         new_window.protocol("WM_DELETE_WINDOW", lambda: self.empty_temporary(new_window))
 
+
     # this is used to clear out all the things inside the temporary obj list
     def empty_temporary(self, new_window):
         for obj in self.temporary_obj_list:
-            print(obj.filename)
+            print(obj['data'].get())
         self.temporary_obj_list = []
-        for obj in self.temporary_obj_list:
-            print(obj.filename)
         new_window.destroy()
+
 
     def click_current_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
@@ -464,8 +492,7 @@ class Page(Root):
         current_path = database.get_filepath(search_filename)
         data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
 
-        # this is not a good format
-        print(database.extract_filename(search_filename, filetype=False))
+        # this is not a good format vvvvvvvv
         dataDict = {
             'name': data[0][0],
             'category': data[0][2],
@@ -474,25 +501,45 @@ class Page(Root):
             'creator': data[0][3],
             'description': data[0][4]
         }
+        # later need change ^^^^^^^^
+
         data_package.set(**dataDict)
+
 
     def click_change_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
         left_frame.grid(row=1, column=3)
+
+        # show the save button
         save_button.grid(row=6, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
+
         # get the selecting item in current database listbox
-        search_filename = listbox.get(listbox.curselection())
-        current_path = database.get_filepath(search_filename)
+        selected_index = listbox.index(listbox.curselection())
+        selected_dict = {}
+        for dictionary in self.temporary_obj_list:
+            if (dictionary.get('index') == selected_index):
+                # get the selected item from the temporary obj list
+                selected_dict = dictionary
+                break
+
+        # check whether the item in temporary location is old or new
+        if (selected_dict.get('type') == "new"):
+            data_package.set(**selected_dict.get('data').get())
+        elif (selected_dict.get('type') == "old"):
+            pass
 
 
     def click_browse(self, window, change_listbox):
         window.filename = filedialog.askopenfilenames(title="Select file(s)")
         window.deiconify()
-        for filename in window.filename:
-            filename = database.extract_filename(filename)
+        for filepath in window.filename:
+            filename = database.extract_filename(filepath)
+            # get the latest index for the inserting
+            index = change_listbox.index("end")
             change_listbox.insert("end", f"(New) {filename}")
-            self.temporary_obj_list.append(db.Data(filename=filename))
+            self.temporary_obj_list.append({ 'data':db.Data(filename=database.extract_filename(filepath, filetype=False), filepath=filepath),'type':"new", 'index':index})
+
 
     # click update button
     def click_update(self, data_package):
@@ -505,6 +552,7 @@ class Page(Root):
             # have difference, needs to update the database
             database.update_data(original_filepath=data_package.data.get()['filepath'], **data_package.new_data.get())
             self.show_table(database.get(search="all", isCount=False))
+
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())
@@ -535,12 +583,14 @@ class Page(Root):
         category = tk.Label(new_window, text=selectedItem.get('values')[2], font=('Arial', 12), height=2)
         category.grid(row=3, column=3, sticky="W")
 
+
     def add_step(self):
         step = database.get_sql_step(state="current")
         print(step.step_type)
         self.step_listbox.select_clear(0, tk.END)
         self.step_listbox.insert("end", f"{step.step_num}. {step.step_type}")
         self.step_listbox.select_set(tk.END)
+
 
     # event is trigger by double clicking the self.step_listbox item
     def click_step_listbox_item(self, event):
@@ -551,6 +601,7 @@ class Page(Root):
         result, _ = database.sql_search(sql)
         self.show_table(database.sort(result))
 
+
     # filter out different category
     def filter(self, filtertype):
         filterList = []
@@ -559,6 +610,7 @@ class Page(Root):
                 filterList.append(button.category)
         self.show_table(database.get(search="filter", isCount=True, keyword=filterList, method=filtertype))
         self.add_step()
+
 
     # disable / select all the checkbutton in the filter section
     def filter_checkbox_select_disable_all(self):
@@ -571,12 +623,15 @@ class Page(Root):
                 button.value_id.set(1)
             self.filter_select_disable_id.set("Disable all")
 
+
     def add_checkbutton(self, root, name, row, column, fontsize):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column, fontsize=fontsize))
+
 
     def search(self, search_method, keyword):
         self.show_table(database.get(search=search_method, isCount=True, keyword=keyword))
         self.add_step()
+
 
     def show_table(self, dataset):
         self.treeview.delete(*self.treeview.get_children())
@@ -585,6 +640,7 @@ class Page(Root):
             self.treeview.insert("", "end", f"item{count}", values=(data[0], database.extract_filename(data[1]), data[2], data[3], data[4]))
             count += 1
         pass
+
 
     def __del__(self):
         print("GUI display is closed")
