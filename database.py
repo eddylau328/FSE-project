@@ -16,24 +16,49 @@ class DateTime:
 
 
 class Data:
-    def __init__(self, name=None, filename=None, filepath=None, category=None, creator=None, description=None):
+    def __init__(self, name=None, filename=None, filepath=None, category=None, creator=None, description=None, create_date=None, last_modify=None):
         self.name = name
         self.filepath = filepath
         self.filename = filename
         self.category = category
         self.creator = creator
         self.description = description
+        self.last_modify = last_modify
+        self.create_date = create_date
 
     def set(self, **kwargs):
-        self.name = kwargs.get('name', self.name)
-        self.filepath = kwargs.get('filepath', self.filepath)
-        self.filename = kwargs.get('filename', self.filename)
-        self.category = kwargs.get('category', self.category)
-        self.creator = kwargs.get('creator', self.creator)
-        self.description = kwargs.get('description', self.description)
+
+        modify_set = self.modify(**kwargs)
+
+        self.name = modify_set.get('name')
+        self.filepath = modify_set.get('filepath')
+        self.filename = modify_set.get('filename')
+        self.category = modify_set.get('category')
+        self.creator = modify_set.get('creator')
+        self.create_date = modify_set.get('create_date')
+        self.last_modify = modify_set.get('last_modify')
+        self.description = modify_set.get('description')
 
     def get(self):
-        return {'name': self.name, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description}
+        return {'name': self.name, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify':self.last_modify, 'create_date':self.create_date}
+
+    def modify(self, **kwargs):
+        modify_set = {
+            'name' : kwargs.get('name', self.name),
+            'filepath' : kwargs.get('filepath', self.filepath),
+            'filename' : kwargs.get('filename', self.filename),
+            'category' : kwargs.get('category', self.category),
+            'creator' : kwargs.get('creator', self.creator),
+            'create_date' : kwargs.get('create_date', self.create_date),
+            'last_modify' : kwargs.get('last_modify', self.last_modify),
+            'description' : kwargs.get('description', self.description)
+        }
+
+        if (modify_set.get('description', None) != None):
+            if (modify_set.get('description').replace(" ", "") != ""):
+                modify_set['description'] = modify_set.get('description').strip()
+
+        return modify_set
 
 
 class SQL:
@@ -131,6 +156,13 @@ class Database:
         file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), current_time, current_time)
         sql = SQL(command, file_obj)
         self.sql_insert(sql)
+
+    def update_data(self, orginal_filepath, **kwargs):
+        # get the id of the orginal data from the database
+        with self.conn:
+            self.c.execute("SELECT id FROM files_table WHERE filepath = ?", (orginal_filepath,))
+            data_id = self.c.fetchall()[0][0]
+        print(data_id)
 
     def get_all_data(self, select_field=None):
         # extract all data from the database

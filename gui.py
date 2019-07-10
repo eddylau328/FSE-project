@@ -3,7 +3,44 @@ import tkinter.ttk as ttk
 import database as db
 import random
 from tkinter import filedialog
+import sys
 
+
+class GUI:
+    def __init__(self, os_platform):
+        if (os_platform == "OS X"):
+
+            self.filter_checkbutton_fontsize = 12
+
+            # Modify FILES POPUP WINDOW CONSTANT
+            self.modify_listbox_width = 28
+            self.modify_width = 900
+            self.modify_height = 500
+            self.modify_leftframe_wraplength = 200
+            self.modify_leftframe_width = 30
+            self.modify_leftframe_font = 12
+        elif (os_platform == "Windows"):
+
+            self.filter_checkbutton_fontsize = 9
+
+            # Modify FILES POPUP WINDOW CONSTANT
+            self.modify_listbox_width = 40
+            self.modify_width = 900
+            self.modify_height = 500
+            self.modify_leftframe_wraplength = 200
+            self.modify_leftframe_width = 32
+            self.modify_leftframe_font = 9
+
+
+def get_platform():
+    platforms = {
+        'darwin' : 'OS X',
+        'win32' : 'Windows'
+    }
+    if (sys.platform not in platforms):
+        return sys.platform
+
+    return platforms[sys.platform]
 '''
 if get all
     [0] => name
@@ -19,49 +56,50 @@ if get all
 class Show_Data_Package:
     def __init__(self, frame):
         self.data = db.Data()
+        self.GUI = GUI(get_platform())
         # name title label
-        self.name_title = tk.Label(frame, text="Name :", font=('Arial', 9))
+        self.name_title = tk.Label(frame, text="Name :", font=('Arial', self.GUI.modify_leftframe_font))
         # name entry id
         self.name_entry_id = tk.StringVar()
         self.name_entry_id.set("")
-        self.name_entry = tk.Entry(frame, textvariable=self.name_entry_id, font=('Arial', 9), width=32)
+        self.name_entry = tk.Entry(frame, textvariable=self.name_entry_id, font=('Arial', self.GUI.modify_leftframe_font), width=self.GUI.modify_leftframe_width)
 
         # creator title label
-        self.creator_title = tk.Label(frame, text="Creator :", font=('Arial', 9))
+        self.creator_title = tk.Label(frame, text="Creator :", font=('Arial', self.GUI.modify_leftframe_font))
 
         # creator label
         self.creator_id = tk.StringVar()
         self.creator_id.set("")
-        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=('Arial', 9), wraplength=200, justify="left", width=0)
+        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_width, justify="left", width=0)
 
         # category title label
-        self.category_title = tk.Label(frame, text="Category :", font=('Arial', 9))
+        self.category_title = tk.Label(frame, text="Category :", font=('Arial', self.GUI.modify_leftframe_font))
         # category entry id
         self.category_id = tk.StringVar()
         self.category_id.set("")
-        self.category_label = tk.Label(frame, textvariable=self.category_id, font=('Arial', 9), wraplength=200, justify="left", width=0)
+        self.category_label = tk.Label(frame, textvariable=self.category_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # filepath label
-        self.filename_title = tk.Label(frame, text="Filename", font=('Arial', 9))
+        self.filename_title = tk.Label(frame, text="Filename", font=('Arial', self.GUI.modify_leftframe_font))
 
         # current filepath id
         self.current_filename_id = tk.StringVar()
         self.current_filename_id.set("")
-        self.current_filename_entry = tk.Entry(frame, textvariable=self.current_filename_id, font=('Arial', 9), width=32)
+        self.current_filename_entry = tk.Entry(frame, textvariable=self.current_filename_id, font=('Arial', self.GUI.modify_leftframe_font), width=self.GUI.modify_leftframe_width)
 
         # filepath label
-        self.filepath_title = tk.Label(frame, text="Filepath", font=('Arial', 9))
+        self.filepath_title = tk.Label(frame, text="Filepath", font=('Arial', self.GUI.modify_leftframe_font))
 
         # current filepath id
         self.current_filepath_id = tk.StringVar()
         self.current_filepath_id.set("")
-        self.current_filepath = tk.Label(frame, textvariable=self.current_filepath_id, font=('Arial', 9), wraplength=200, justify="left", width=0)
+        self.current_filepath = tk.Label(frame, textvariable=self.current_filepath_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # description title label
-        self.description_title = tk.Label(frame, text="Description :", font=('Arial', 9))
+        self.description_title = tk.Label(frame, text="Description :", font=('Arial', self.GUI.modify_leftframe_font))
 
         # description entry id
-        self.description_text = tk.Text(frame, font=('Arial', 9), height=10, width=32)
+        self.description_text = tk.Text(frame, font=('Arial', self.GUI.modify_leftframe_font), height=10, width=self.GUI.modify_leftframe_width)
 
     # row, column is start from corner
     def show_name(self, row, column):
@@ -113,12 +151,24 @@ class Show_Data_Package:
 
     def compare_value(self):
         dataset = self.data.get()
-        # if (dataset['name'] == self.):
-        # if (dataset['filename'] == ):
-        # if (dataset['filepath'] == ):
-        # if (dataset['category'] == ):
-        # if (dataset['creator'] == ):
-        # if (dataset['description'] == ):
+        isSame = True
+        if (dataset['name'] != self.name_entry_id.get()):
+            print("pass1")
+            isSame = False
+        if (dataset['filename'] != self.current_filename_id.get()):
+            print("pass2")
+            isSame = False
+        if (dataset['filepath'] != self.current_filepath_id.get()):
+            print("pass3")
+            isSame = False
+        if (dataset['category'] != self.category_id.get()):
+            print("pass4")
+            isSame = False
+        if (dataset['description'].replace(" ", "") != self.description_text.get("1.0", "end-1c").replace(" ","")):
+            print("'"+dataset['description']+"'")
+            print("'"+self.description_text.get("1.0", "end")+"'")
+            isSame = False
+        return isSame
 
 
 class Root:
@@ -135,16 +185,19 @@ class Root:
 
 
 class Checkbutton:
-    def __init__(self, root, name, row, column):
+    def __init__(self, root, name, row, column, fontsize):
         self.value_id = tk.IntVar(value=1)
         self.category = name
-        self.checkbutton = tk.Checkbutton(root, text=name, variable=self.value_id, font=('Arial', 9))
+        self.checkbutton = tk.Checkbutton(root, text=name, variable=self.value_id, font=('Arial', fontsize))
         self.checkbutton.grid(row=row, column=column, sticky="W")
 
 
 class Page(Root):
     def __init__(self):
         Root.__init__(self)
+        # check what os system the user is using
+        self.GUI = GUI(get_platform())
+
         self.root.grid_rowconfigure(0, minsize=30)
         self.root.grid_columnconfigure(0, minsize=20)
         # Heading
@@ -227,7 +280,7 @@ class Page(Root):
         row = 0
         column = 0
         for category in database.get_category():
-            self.add_checkbutton(self.filter_title, category[0], row=row, column=column)
+            self.add_checkbutton(self.filter_title, category[0], row=row, column=column, fontsize=self.GUI.filter_checkbutton_fontsize)
             row += 1
 
         self.filter_radiobutton_id = tk.StringVar()
@@ -305,7 +358,7 @@ class Page(Root):
 
     # Add / delete / modify files Window
     def add_delete_modify_files(self):
-        new_window = self.create_window(900, 500)
+        new_window = self.create_window(self.GUI.modify_width, self.GUI.modify_height)
 
         # skip some spaces in both dir
         new_window.grid_rowconfigure(0, minsize=10)
@@ -322,7 +375,7 @@ class Page(Root):
         change_title = tk.Label(right_frame, text="Temporary", font=('Arial', 12))
         change_title.grid(row=1, column=1)
 
-        change_listbox = tk.Listbox(right_frame, width=40, height=25)
+        change_listbox = tk.Listbox(right_frame, width=self.GUI.modify_listbox_width, height=25)
         change_listbox.grid(row=2, column=1, rowspan=25)
 
         # move left / right button is used to shift things to database or delete things to database
@@ -334,7 +387,7 @@ class Page(Root):
         current_title = tk.Label(right_frame, text="Current Database", font=('Arial', 12))
         current_title.grid(row=1, column=3)
 
-        current_listbox = tk.Listbox(right_frame, width=40, height=25)
+        current_listbox = tk.Listbox(right_frame, width=self.GUI.modify_listbox_width, height=25)
         current_listbox.grid(row=2, column=3, rowspan=25)
         for data in database.get(search="all", isCount=False, select_field=['filepath']):
             current_listbox.insert("end", f"{database.extract_filename(data[0])}")
@@ -363,7 +416,7 @@ class Page(Root):
         data_package.show_description(row=5, column=1)
 
         # update button is used to update the data of the file
-        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update())
+        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
         update_button.grid(row=6, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
         # save button is used to save the data currently
@@ -400,6 +453,8 @@ class Page(Root):
         search_filename = listbox.get(listbox.curselection())
         current_path = database.get_filepath(search_filename)
         data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
+
+        # this is not a good format
         print(database.extract_filename(search_filename, filetype=False))
         dataDict = {
             'name': data[0][0],
@@ -428,8 +483,9 @@ class Page(Root):
             change_listbox.insert("end", f"(New) {filename}")
             self.temporary_obj_list.append(db.Data(filename=filename))
 
-    def click_update(self):
+    def click_update(self, data_package):
         print("click update")
+        print(data_package.compare_value())
 
     def click_treeview_item(self, event):
         selectedItem = self.treeview.item(self.treeview.focus())
@@ -496,8 +552,8 @@ class Page(Root):
                 button.value_id.set(1)
             self.filter_select_disable_id.set("Disable all")
 
-    def add_checkbutton(self, root, name, row, column):
-        self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column))
+    def add_checkbutton(self, root, name, row, column, fontsize):
+        self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column, fontsize=fontsize))
 
     def search(self, search_method, keyword):
         self.show_table(database.get(search=search_method, isCount=True, keyword=keyword))
@@ -542,5 +598,7 @@ database.add(name="Smart Lighting", filepath="files/smart_lighting.pdf", categor
 database.add(name="IAQ Smart Device", filepath="files/indoor_air_quality_device.pdf", category="smart device,indoor air quality")
 database.add(name="Air filter Device", filepath="files/air_filter_device.pdf", category="indoor air quality")
 
-# database.print()
-gui = Page()
+if (get_platform() == "Windows" or get_platform() == "OS X"):
+    gui = Page()
+else:
+    print("Sorry. The application does not support %s yet." % get_platform())
