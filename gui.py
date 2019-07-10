@@ -490,6 +490,9 @@ class Page(Root):
         left_frame.grid(row=1, column=3)
         update_button.grid(row=6, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
+
+        data_package.reset()
+
         # get the selecting item in current database listbox
         search_filename = listbox.get(listbox.curselection())
         current_path = database.get_filepath(search_filename)
@@ -512,7 +515,7 @@ class Page(Root):
     def click_change_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
         left_frame.grid(row=1, column=3)
-
+        data_package.reset()
         # show the save button
         save_button.grid(row=6, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
@@ -534,6 +537,7 @@ class Page(Root):
     def click_move_out(self, left_frame, data_package, change_listbox, current_listbox):
         # show the left_frame
         left_frame.grid_forget()
+        data_package.reset()
         # move the item from current listbox to change listbox
         delete_item = 0
         for selected_item in current_listbox.curselection():
@@ -582,6 +586,26 @@ class Page(Root):
             index = change_listbox.index("end")
             change_listbox.insert("end", f"(New) {filename}")
             self.temporary_obj_list.append({ 'data':db.Data(filename=database.extract_filename(filepath, filetype=False), filepath=filepath),'type':"new", 'index':index})
+
+
+#    def click_delete(self, left_frame, data_package, change_listbox):
+#        left_frame.grid_forget()
+#
+#        # saves the index to remove items in self.temporary_obj_list
+#        remove_index_list = []
+#        remove_num = 0
+#        # used to count the number of remove items and remove items index
+#        for selected_item in change_listbox.curselection():
+#            remove_num += 1
+#            remove_index_list.append(change_listbox.index(change_listbox.curselection()))
+
+#        # delete item in from current listbox
+#        for delete_item in range(0, delete_item):
+#            print(current_listbox.curselection()[0])
+#            current_listbox.delete(current_listbox.curselection()[0])
+#        current_listbox.select_clear(0, "end")
+
+
 
 
     # click save button (it should be saving temporary, not in the database)
