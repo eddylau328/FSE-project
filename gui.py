@@ -104,7 +104,17 @@ class Show_Data_Package:
         # description entry id
         self.description_text = tk.Text(frame, font=('Arial', self.GUI.modify_leftframe_font), height=10, width=self.GUI.modify_leftframe_width)
 
-        #self.create_date_title = tk.Label(frame, text="Create Date :", font=('Arial', self.GUI.modify_leftframe_font))
+        # create date title
+        self.last_modify_title = tk.Label(frame, text="Last Modify :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.last_modify_id = tk.StringVar()
+        self.last_modify_id.set("")
+        self.last_modify = tk.Label(frame, textvariable=self.last_modify_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+
+        # create date title
+        self.create_date_title = tk.Label(frame, text="Create Date :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.create_date_id = tk.StringVar()
+        self.create_date_id.set("")
+        self.create_date = tk.Label(frame, textvariable=self.create_date_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
 
     # row, column is start from corner
@@ -137,6 +147,17 @@ class Show_Data_Package:
         self.description_title.grid(row=row, column=column, sticky="WN", padx=5, pady=8)
         self.description_text.grid(row=row, column=column + 1, sticky="W", padx=5, pady=8)
 
+    # row, column is start from corner
+    def show_last_modify(self, row, column):
+        self.last_modify_title.grid(row=row, column=column, sticky="WN", padx=5, pady=8)
+        self.last_modify.grid(row=row, column=column + 1, sticky="W", padx=5, pady=8)
+
+    # row, column is start from corner
+    def show_create_date(self, row, column):
+        self.create_date_title.grid(row=row, column=column, sticky="WN", padx=5, pady=8)
+        self.create_date.grid(row=row, column=column + 1, sticky="W", padx=5, pady=8)
+
+
     def set(self, **kwargs):
         name = kwargs.get('name', None)
         creator = kwargs.get('creator', None)
@@ -144,9 +165,11 @@ class Show_Data_Package:
         filename = kwargs.get('filename', None)
         filepath = kwargs.get('filepath', None)
         description = kwargs.get('description', None)
+        last_modify = kwargs.get('last_modify', None)
+        create_date = kwargs.get('create_date', None)
 
-        self.data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
-        self.new_data.set(name=name, creator=creator, category=category, filename=filename, filepath=filepath, description=description)
+        self.data.set(**kwargs)
+        self.new_data.set(**kwargs)
 
         if (name != None):
             self.name_entry_id.set(name)
@@ -168,6 +191,14 @@ class Show_Data_Package:
             self.current_filepath_id.set(filepath)
         else:
             self.current_filepath_id.set("")
+        if (create_date != None):
+            self.create_date_id.set(create_date)
+        else:
+            self.create_date_id.set("")
+        if (last_modify != None):
+            self.last_modify_id.set(last_modify)
+        else:
+            self.last_modify_id.set("")
 
         # clear the content in the description text box
         self.description_text.delete('1.0', 'end')
@@ -175,13 +206,16 @@ class Show_Data_Package:
             self.description_text.insert("end", description)
 
     def update_new_data(self):
+        #  dataset -> made need some corrections
         dataset = {
             'name' : self.name_entry_id.get(),
             'filepath' : self.current_filepath_id.get(),
             'filename' : self.current_filename_id.get(),
             'category' : self.category_id.get(),
             'creator' : self.creator_id.get(),
-            'description' : self.description_text.get("1.0", "end-1c")
+            'description' : self.description_text.get("1.0", "end-1c"),
+            'create_date' : self.create_date_id.get(),
+            'last_modify' : db.DateTime().get_current_time()
         }
         self.new_data.set(**dataset)
 
@@ -209,6 +243,8 @@ class Show_Data_Package:
         self.category_id.set("")
         self.creator_id.set("")
         self.description_text.delete("1.0", "end")
+        self.create_date_id.set("")
+        self.last_modify_id.set("")
         self.data = db.Data()
         self.new_data = db.Data()
 
@@ -456,18 +492,19 @@ class Page(Root):
         data_package.show_filename(row=3, column=1)
         data_package.show_filepath(row=4, column=1)
         data_package.show_description(row=5, column=1)
-
+        data_package.show_last_modify(row=6, column=1)
+        data_package.show_create_date(row=7, column=1)
         # delete button is used to delete file in change_listbox
         delete_button = tk.Button(right_frame, text="Delete file", font=('Arial', 12), command=lambda: self.click_delete(left_frame, data_package, change_listbox))
         delete_button.grid(row=28, column=1, sticky="E")
 
         # update button is used to update the data of the file
         update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
-        update_button.grid(row=6, column=1, columnspan=3, pady=10)
+        update_button.grid(row=8, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
         # save button is used to save the data currently
         save_button = tk.Button(left_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
-        save_button.grid(row=6, column=1, columnspan=3, pady=10)
+        save_button.grid(row=8, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
 
         # binding the double click event to the current listbox
@@ -485,11 +522,11 @@ class Page(Root):
         move_out_button.grid(row=14, column=2, padx=5)
 
         # closing new_window event which is clearing all the obj inside self.temporary_obj_list
-        new_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_modify_delte_window(new_window))
+        new_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_delete_modify_files_window(new_window))
 
 
     # this is used to clear out all the things inside the temporary obj list
-    def close_add_modify_delte_window(self, new_window):
+    def close_add_delete_modify_files_window(self, new_window):
         for obj in self.temporary_obj_list:
             print(obj['data'].get())
         self.temporary_obj_list = []
@@ -500,7 +537,7 @@ class Page(Root):
     def click_current_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
         left_frame.grid(row=1, column=3)
-        update_button.grid(row=6, column=1, columnspan=3, pady=10)
+        update_button.grid(row=8, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
 
         data_package.reset()
@@ -524,7 +561,7 @@ class Page(Root):
             'filepath': data.get('filepath', None),
             'creator': data.get('creator', None),
             'description': data.get('description', None),
-            'created_date': data.get('created_date', None),
+            'create_date': data.get('create_date', None),
             'last_modify': data.get('last_modify', None)
         }
 
@@ -536,7 +573,7 @@ class Page(Root):
         left_frame.grid(row=1, column=3)
         data_package.reset()
         # show the save button
-        save_button.grid(row=6, column=1, columnspan=3, pady=10)
+        save_button.grid(row=8, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
 
         # get the selecting item in current database listbox
@@ -628,7 +665,7 @@ class Page(Root):
                 'filepath': data.get('filepath', None),
                 'creator': data.get('creator', None),
                 'description': data.get('description', None),
-                'created_date': data.get('created_date', None),
+                'create_date': data.get('create_date', None),
                 'last_modify': data.get('last_modify', None)
             }
 
