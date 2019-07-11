@@ -199,7 +199,8 @@ class Database:
         command = self.set_select_field_command(select_field)
         target = ()
         count = 0
-
+        if (len(categoryList) > 0):
+            command = command + ''' WHERE '''
         for category in categoryList:
             command = command + ''' category LIKE ? '''
             if (count < len(categoryList) - 1):
@@ -208,6 +209,7 @@ class Database:
             target = target + ('%' + category + '%',)
 
         command = self.set_order_command(command, select_field, order_field)
+        print(command)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
@@ -239,17 +241,32 @@ class Database:
         target = ()
 
         if (compare_field == None):
-            command = command + ''' WHERE name=? COLLATE NOCASE'''
-            target = (keyword,)
+            if (search == "exact"):
+                command = command + ''' WHERE name=? COLLATE NOCASE'''
+                target = (keyword,)
+            elif (search == "relate"):
+                command = command + ''' WHERE name LIKE ? COLLATE NOCASE'''
+                target = ('%' + keyword + '%',)
         else:
             if (search == "exact"):
+                if (len(compare_field) > 0):
+                    command = command + ''' WHERE '''
+                count = 0
                 for string in compare_field:
-                    command = command + ''' WHERE ''' + string + '''=? COLLATE NOCASE'''
+                    command = command + string + ''' =? COLLATE NOCASE '''
+                    if (count < len(compare_field) - 1):
+                        command = command + ''' and '''
+                    count += 1
                 for word in keyword:
                     target = target + (word,)
             elif (search == "relate"):
+                if (len(compare_field) > 0):
+                    command = command + ''' WHERE '''
                 for string in compare_field:
-                    command = command + ''' WHERE ''' + string + '''LIKE ? COLLATE NOCASE'''
+                    command = command + string + ''' LIKE ? COLLATE NOCASE '''
+                    if (count < len(compare_field) - 1):
+                        command = command + ''' or '''
+                    count += 1
                 for word in keyword:
                     target = target + ('%' + word + '%',)
 
@@ -314,6 +331,7 @@ class Database:
     # method is the way it used to do sorting, union or intersection
     # select_field is the field you want the database to return
     # compare field is the field you want the database to compare your keyword to which column
+    # order field is the field you want to sort
     def get(self, search, isCount, keyword=None, method=None, select_field=None, compare_field=None, order_field=None):
         if (search == "all"):
             result = self.get_all_data(select_field=select_field,compare_field=compare_field,order_field=order_field)
