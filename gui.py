@@ -785,8 +785,8 @@ class Page(Root):
         new_window = self.create_window(self.GUI.treeview_popup_width, self.GUI.treeview_popup_height)
 
         labelframe = tk.LabelFrame(new_window, text="Detail Information", font=self.GUI.treeview_popup_font)
-        labelframe.grid(row=0,column=0, padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
-
+        #labelframe.grid(row=0,column=0, padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
+        labelframe.pack(fill=tk.BOTH, expand=1, side="top", padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
         # name title label
         name_title = tk.Label(labelframe, text="Name :", font=self.GUI.treeview_popup_font)
         name_title.grid(row=0, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
@@ -943,16 +943,15 @@ if (get_platform() == "OS X"):
 elif (get_platform() == "Windows"):
     file_sep = "\\"
 
-database.add(name="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(name="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(name="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(name="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(name="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
+database.add(name="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
+database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-for i in range(1, 10):
-    num = random.randint(1,1000)
-    database.add(name=f"{num} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{num}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+for i in range(1, 1000):
+    database.add(name=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 database.add(name="Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
 database.add(name="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
