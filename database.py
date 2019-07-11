@@ -110,7 +110,6 @@ class SQL:
         self.command = sql
         self.target = target
 
-
 class SQL_Solution:
     def __init__(self, is_procedure_search):
         self.steps = []
@@ -138,12 +137,16 @@ class SQL_Solution:
 
 
 class SQL_Step:
-    def __init__(self, step_type, step_num, sql):
+    def __init__(self, step_type, step_num, sql ,keyword, method, select_field, compare_field, order_field):
         # step_num is started from 1 to ...
         self.step_num = step_num
         self.step_type = step_type
         self.sql = sql
-
+        self.keyword = keyword
+        self.method = method
+        self.select_field = select_field
+        self.compare_field = compare_field
+        self.order_field = order_field
 
 class Database:
     def __init__(self):
@@ -380,7 +383,7 @@ class Database:
         if (search == "all"):
             result = self.get_all_data(select_field=select_field,compare_field=compare_field,order_field=order_field)
             if (isCount == True):
-                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
+                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                 self.sql_steps.add_step(step)
             return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
         elif (search == "relate" or search == "exact"):
@@ -390,7 +393,7 @@ class Database:
                     step_type = "Search related keyword"
                 elif (search == "exact"):
                     step_type = "Search exact keyword"
-                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
+                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                 self.sql_steps.add_step(step)
             return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
         elif (search == "filter"):
@@ -402,7 +405,11 @@ class Database:
                 else:
                     result = self.get_filter(keyword, method, select_field, order_field)
                     if (isCount == True):
-                        step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
+                        if (method == "union"):
+                            step_type = "Filter Related"
+                        elif (method == "intersect"):
+                            step_type = "Filter Exact"
+                        step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                         self.sql_steps.add_step(step)
                     return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
 

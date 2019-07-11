@@ -18,7 +18,20 @@ class GUI:
             self.modify_height = 500
             self.modify_leftframe_wraplength = 200
             self.modify_leftframe_width = 30
-            self.modify_leftframe_font = 12
+            self.modify_leftframe_font = ('Arial', 12)
+
+            # Click Treeviews POPUP WINDOW CONSTANT
+            self.treeview_popup_font = ('Arial', 12)
+            self.treeview_popup_width = 400
+            self.treeview_popup_height = 400
+            self.treeview_popup_padx = 10
+            self.treeview_popup_pady = 5
+            self.treeview_popup_labelframe_padx = 10
+            self.treeview_popup_labelframe_pady = 10
+            self.treeview_popup_labelframe_width = 300
+            self.treeview_popup_labelframe_height = 300
+            self.treeview_popup_data_wraplength = 100
+
         elif (os_platform == "Windows"):
 
             self.filter_checkbutton_fontsize = 9
@@ -29,7 +42,7 @@ class GUI:
             self.modify_height = 500
             self.modify_leftframe_wraplength = 200
             self.modify_leftframe_width = 32
-            self.modify_leftframe_font = 9
+            self.modify_leftframe_font = ('Arial', 9)
 
 
 def get_platform():
@@ -64,60 +77,60 @@ class Show_Data_Package:
 
         self.GUI = GUI(get_platform())
         # name title label
-        self.name_title = tk.Label(frame, text="Name :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.name_title = tk.Label(frame, text="Name :", font=self.GUI.modify_leftframe_font)
         # name entry id
         self.name_entry_id = tk.StringVar()
         self.name_entry_id.set("")
-        self.name_entry = tk.Entry(frame, textvariable=self.name_entry_id, font=('Arial', self.GUI.modify_leftframe_font), width=self.GUI.modify_leftframe_width)
+        self.name_entry = tk.Entry(frame, textvariable=self.name_entry_id, font=self.GUI.modify_leftframe_font, width=self.GUI.modify_leftframe_width)
 
         # creator title label
-        self.creator_title = tk.Label(frame, text="Creator :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.creator_title = tk.Label(frame, text="Creator :", font=self.GUI.modify_leftframe_font)
 
         # creator label
         self.creator_id = tk.StringVar()
         self.creator_id.set("")
-        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_width, justify="left", width=0)
+        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_width, justify="left", width=0)
 
         # category title label
-        self.category_title = tk.Label(frame, text="Category :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.category_title = tk.Label(frame, text="Category :", font=self.GUI.modify_leftframe_font)
         # category entry id
         self.category_id = tk.StringVar()
         self.category_id.set("")
-        self.category_label = tk.Label(frame, textvariable=self.category_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.category_label = tk.Label(frame, textvariable=self.category_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # filepath label
-        self.filename_title = tk.Label(frame, text="Filename", font=('Arial', self.GUI.modify_leftframe_font))
+        self.filename_title = tk.Label(frame, text="Filename", font=self.GUI.modify_leftframe_font)
 
         # current filepath id
         self.current_filename_id = tk.StringVar()
         self.current_filename_id.set("")
-        self.current_filename_entry = tk.Entry(frame, textvariable=self.current_filename_id, font=('Arial', self.GUI.modify_leftframe_font), width=self.GUI.modify_leftframe_width)
+        self.current_filename_entry = tk.Entry(frame, textvariable=self.current_filename_id, font=self.GUI.modify_leftframe_font, width=self.GUI.modify_leftframe_width)
 
         # filepath label
-        self.filepath_title = tk.Label(frame, text="Filepath", font=('Arial', self.GUI.modify_leftframe_font))
+        self.filepath_title = tk.Label(frame, text="Filepath", font=self.GUI.modify_leftframe_font)
 
         # current filepath id
         self.current_filepath_id = tk.StringVar()
         self.current_filepath_id.set("")
-        self.current_filepath = tk.Label(frame, textvariable=self.current_filepath_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.current_filepath = tk.Label(frame, textvariable=self.current_filepath_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # description title label
-        self.description_title = tk.Label(frame, text="Description :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.description_title = tk.Label(frame, text="Description :", font=self.GUI.modify_leftframe_font)
 
         # description entry id
-        self.description_text = tk.Text(frame, font=('Arial', self.GUI.modify_leftframe_font), height=10, width=self.GUI.modify_leftframe_width)
+        self.description_text = tk.Text(frame, font=self.GUI.modify_leftframe_font, height=10, width=self.GUI.modify_leftframe_width)
 
         # create date title
-        self.last_modify_title = tk.Label(frame, text="Last Modify :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.last_modify_title = tk.Label(frame, text="Last Modify :", font=self.GUI.modify_leftframe_font)
         self.last_modify_id = tk.StringVar()
         self.last_modify_id.set("")
-        self.last_modify = tk.Label(frame, textvariable=self.last_modify_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.last_modify = tk.Label(frame, textvariable=self.last_modify_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # create date title
-        self.create_date_title = tk.Label(frame, text="Create Date :", font=('Arial', self.GUI.modify_leftframe_font))
+        self.create_date_title = tk.Label(frame, text="Create Date :", font=self.GUI.modify_leftframe_font)
         self.create_date_id = tk.StringVar()
         self.create_date_id.set("")
-        self.create_date = tk.Label(frame, textvariable=self.create_date_id, font=('Arial', self.GUI.modify_leftframe_font), wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.create_date = tk.Label(frame, textvariable=self.create_date_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
 
     # row, column is start from corner
@@ -760,33 +773,65 @@ class Page(Root):
 
 
     def click_treeview_item(self, event):
-        selectedItem = self.treeview.item(self.treeview.focus())
-        new_window = self.create_window(400, 400)
-        # skip spaces at the top of the window
-        new_window.grid_rowconfigure(0, minsize=30)
-        # skip spaces at the left of the window
-        new_window.grid_columnconfigure(0, minsize=30)
-        # name title label
-        name_title = tk.Label(new_window, text="Name :", font=('Arial', 12), height=2)
-        name_title.grid(row=1, column=1, sticky="W")
-        # filepath title label
-        filepath_title = tk.Label(new_window, text="Filepath :", font=('Arial', 12), height=2)
-        filepath_title.grid(row=2, column=1, sticky="W")
-        # category title label
-        category_title = tk.Label(new_window, text="Category :", font=('Arial', 12), height=2)
-        category_title.grid(row=3, column=1, sticky="W")
+        new_window = self.create_window(self.GUI.treeview_popup_width, self.GUI.treeview_popup_height)
 
-        # skip spaces between the titles and the data
-        new_window.grid_columnconfigure(2, minsize=15)
+        labelframe = tk.LabelFrame(new_window, text="")
+        labelframe.grid(row=0,column=0, padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
+
+        # name title label
+        name_title = tk.Label(labelframe, text="Name :", font=self.GUI.treeview_popup_font)
+        name_title.grid(row=0, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # creator
+        creator_title = tk.Label(labelframe, text="Creator :", font=self.GUI.treeview_popup_font)
+        creator_title.grid(row=1, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # category title label
+        category_title = tk.Label(labelframe, text="Category :", font=self.GUI.treeview_popup_font)
+        category_title.grid(row=2, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # filename title label
+        filename_title = tk.Label(labelframe, text="Filename :", font=self.GUI.treeview_popup_font)
+        filename_title.grid(row=3, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # filepath title label
+        filepath_title = tk.Label(labelframe, text="Filepath :", font=self.GUI.treeview_popup_font)
+        filepath_title.grid(row=4, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # description title label
+        # category title label
+        description_title = tk.Label(labelframe, text="Description :", font=self.GUI.treeview_popup_font)
+        description_title.grid(row=5, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # last modify title
+        last_modify_title = tk.Label(labelframe, text="Last Modify :", font=self.GUI.treeview_popup_font)
+        last_modify_title.grid(row=6, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # create date title
+        create_date_title = tk.Label(labelframe, text="Create Date :", font=self.GUI.treeview_popup_font)
+        create_date_title.grid(row=7, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+
+        selected_item = self.treeview.item(self.treeview.focus())
+        filepath = selected_item.get('values')[1]
+        data = database.get(search="exact",isCount=False, keyword=filepath, select_field="all", compare_field="filepath")
+
         # name data
-        name = tk.Label(new_window, text=selectedItem.get('values')[0], font=('Arial', 12), height=2)
-        name.grid(row=1, column=3, sticky="W")
-        # filepath data
-        filepath = tk.Label(new_window, text=selectedItem.get('values')[1], font=('Arial', 12), height=2)
-        filepath.grid(row=2, column=3, sticky="W")
+        name = tk.Label(labelframe, text=data.get('name'), font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength)
+        name.grid(row=0, column=1, sticky="W")
+        # creator data
+        creator = tk.Label(labelframe, text=data.get('name'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        creator.grid(row=1, column=1, sticky="W")
         # category data
-        category = tk.Label(new_window, text=selectedItem.get('values')[2], font=('Arial', 12), height=2)
-        category.grid(row=3, column=3, sticky="W")
+        category = tk.Label(labelframe, text=data.get('category'), font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength)
+        category.grid(row=2, column=1, sticky="W")
+        # category data
+        filename = tk.Label(labelframe, text=database.extract_filename(data.get('filepath'),filetype=True), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        filename.grid(row=3, column=1, sticky="W")
+        # filepath data
+        filepath = tk.Label(labelframe, text=data.get('filepath'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        filepath.grid(row=4, column=1, sticky="W")
+        # description data
+        description = tk.Label(labelframe, text=data.get('description'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        description.grid(row=5, column=1, sticky="W")
+        # last modify data
+        last_modify = tk.Label(labelframe, text=data.get('last_modify'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        last_modify.grid(row=6, column=1, sticky="W")
+        # create date data
+        create_date = tk.Label(labelframe, text=data.get('create_date'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
+        create_date.grid(row=7, column=1, sticky="W")
 
 
     def add_step(self):
@@ -802,9 +847,12 @@ class Page(Root):
         # receive the index which the user select
         index = self.step_listbox.curselection()[0]
         # index is equal to the step num
-        sql = database.get_sql_step(step_num=index).sql
-        result, _ = database.sql_search(sql)
-        self.show_table(database.sort(result))
+        step = database.get_sql_step(step_num=index)
+        # unorganised format
+        result = database.sql_search(step.sql).get('data')
+        # unorganised format => dictionary
+        result = database.format_dataset_to_dictionary(result, step.select_field)
+        self.show_table(result)
 
 
     # filter out different category
