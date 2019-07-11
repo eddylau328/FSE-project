@@ -126,7 +126,7 @@ class Database:
         # description - descripes what the file is
         # Create date - saves the created date of the object
         # Last Modify - saves the latest update time and date
-
+        self.ALL_FIELDS = ("name", "filepath", "category", "creator", "description", "create_date", "last_modify")
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
@@ -157,6 +157,7 @@ class Database:
         sql = SQL(command, file_obj)
         self.sql_action(sql)
 
+
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
         command = '''UPDATE files_table SET name = ?, filepath = ?, category = ?, description = ?, last_modify = ? WHERE filepath =?'''
@@ -170,22 +171,6 @@ class Database:
         target = (original_filepath,)
         sql = SQL(command, target)
         self.sql_action(sql)
-
-    def get_all_data(self, select_field=None):
-        # extract all data from the database
-        if (select_field == None):
-            command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
-        else:
-            count = 0
-            command = '''SELECT '''
-            for string in select_field:
-                if (count < len(select_field) - 1):
-                    command = command + string + ''', '''
-                else:
-                    command = command + string
-            command = command + ''' FROM files_table '''
-        sql = SQL(command)
-        return self.sql_search(sql)
 
     # can insert, can delete, can update
     def sql_action(self, sql):
@@ -202,73 +187,126 @@ class Database:
                 self.c.execute(sql.command, sql.target)
         return {'data': self.c.fetchall(), 'sql': sql}
 
-    def get_filter(self, categoryList, method):
+    def get_filter(self, categoryList, method, select_field, order_field):
         if (method == 'union'):
             logic = "or"
         elif (method == 'intersect'):
             logic = "and"
         else:
             return
-        sql = ''''''
-        target = None
-        if (categoryList != []):
-            sql = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE'''
-            target = ()
-            count = 0
-            for category in categoryList:
-                sql = sql + ''' category LIKE ? '''
-                if (count < len(categoryList) - 1):
-                    sql = sql + logic
-                count += 1
-                target = target + ('%' + category + '%',)
-        sql = SQL(sql, target)
-        return self.sql_search(sql)
 
-    def get_relate(self, keyword):
-        command = '''SELECT name, filepath, creator, last_modify, category FROM files_table WHERE name LIKE ? COLLATE NOCASE'''
-        target = ('%' + keyword + '%',)
+        # return the select field command
+        command = self.set_select_field_command(select_field)
+        target = ()
+        count = 0
+
+        for category in categoryList:
+            command = command + ''' category LIKE ? '''
+            if (count < len(categoryList) - 1):
+                command = command + logic
+            count += 1
+            target = target + ('%' + category + '%',)
+
+        command = self.set_order_command(command, select_field, order_field)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
-    def get_exact(self, keyword, select_field=None, compare_field=None):
-        command = ''''''
-        target = ()
-        if (select_field == None):
-            command = '''SELECT name, filepath, creator, last_modify, category FROM files_table'''
-        elif (select_field == "all"):
+    # used to create the select field command
+    def set_select_field_command(self, select_field):
+        if (select_field == None or select_field == "all"):
             command = '''SELECT * FROM files_table'''
+        else:
+            count = 0
+            command = '''SELECT '''
+            for string in select_field:
+                if (count < len(select_field) - 1):
+                    command = command + string + ''', '''
+                else:
+                    command = command + string
+                count += 1
+            command = command + ''' FROM files_table '''
+        return command
+
+    def get_all_data(self, select_field, compare_field, order_field):
+        # extract all data from the database
+        command = self.set_select_field_command(select_field)
+        command = self.set_order_command(command, select_field, order_field)
+        sql = SQL(command)
+        return self.sql_search(sql)
+
+    def get_exact_or_relate(self, search, keyword, select_field, compare_field, order_field):
+        command = self.set_select_field_command(select_field)
+        target = ()
 
         if (compare_field == None):
             command = command + ''' WHERE name=? COLLATE NOCASE'''
             target = (keyword,)
         else:
-            for string in compare_field:
-                command = command + ''' WHERE ''' + string + '''=? COLLATE NOCASE'''
-            for word in keyword:
-                target = target + (word,)
-        print(command)
-        print(target)
+            if (search == "exact"):
+                for string in compare_field:
+                    command = command + ''' WHERE ''' + string + '''=? COLLATE NOCASE'''
+                for word in keyword:
+                    target = target + (word,)
+            elif (search == "relate"):
+                for string in compare_field:
+                    command = command + ''' WHERE ''' + string + '''LIKE ? COLLATE NOCASE'''
+                for word in keyword:
+                    target = target + ('%' + word + '%',)
+
+        command = self.set_order_command(command, select_field, order_field)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
-    def sort(self, dataset, reverse=None, select_field=None):
-        if (reverse == None):
-            if (select_field == None):
-                dataset.sort(key=itemgetter(4, 0))
+    def set_order_command(self, command, select_field, order_field):
+        if (select_field == None or select_field == "all"):
+            if (order_field == None):
+                command = command + ''' ORDER BY category ASC, name ASC'''
             else:
-                if ("category" in select_field and "name" in select_field):
-                    dataset.sort(key=itemgetter(select_field.index("category"), select_field.index("name")))
-                else:
-                    return dataset
+                command = command + ''' ORDER BY '''
+                count = 0
+                for field in order_field:
+                    if (count < len(order_field) - 1):
+                        command = command + ''' ''' + field + ''' ASC, '''
+                    else:
+                        command = command + ''' ''' + field + ''' ASC '''
         else:
-            if (select_field == None):
-                dataset.sort(key=itemgetter(4, 0), reverse=reverse)
-            else:
+            if (order_field == None):
                 if ("category" in select_field and "name" in select_field):
-                    dataset.sort(key=itemgetter(select_field.index("category"), select_field.index("name")), reverse=reverse)
-                else:
-                    return dataset
-        return dataset
+                    command = command + ''' ORDER BY category ASC, name ASC'''
+                elif ("category" in select_field):
+                    command = command + ''' ORDER BY category ASC'''
+                elif ("name" in select_field):
+                    command = command + ''' ORDER BY name ASC'''
+                elif ("filepath" in select_field):
+                    command = command + ''' ORDER BY filepath ASC'''
+            else:
+                command = command + ''' ORDER BY '''
+                count = 0
+                for field in order_field:
+                    if (field in select_field):
+                        if (count < len(order_field)-1):
+                            command = command + ''' ''' + field + ''' ASC, '''
+                        else:
+                            command = command + ''' ''' + field + ''' ASC '''
+                    count += 1
+        return command
+
+    # this is used to format all the get results set into dictionary type object
+    def format_dataset_to_dictionary(self, dataset, select_field):
+        new_dataset = []
+        for obj in dataset:
+            dict_obj = {}
+            if (select_field == "all" or select_field == None):
+                for field in self.ALL_FIELDS:
+                    # as self.ALL_FIELDS is in order with the column, therefore it can get the correct column
+                    dict_obj[field] = obj[self.ALL_FIELDS.index(field)]
+            else:
+                index = 0
+                for field in select_field:
+                    dict_obj[field] = obj[index]
+                    index += 1
+            new_dataset.append(dict_obj)
+        return new_dataset
 
     # search is the method it used to search
     # isCount is whether it needs to count a step
@@ -276,25 +314,23 @@ class Database:
     # method is the way it used to do sorting, union or intersection
     # select_field is the field you want the database to return
     # compare field is the field you want the database to compare your keyword to which column
-    def get(self, search, isCount, keyword=None, method=None, select_field=None, compare_field=None):
+    def get(self, search, isCount, keyword=None, method=None, select_field=None, compare_field=None, order_field=None):
         if (search == "all"):
-            result = self.get_all_data(select_field=select_field)
+            result = self.get_all_data(select_field=select_field,compare_field=compare_field,order_field=order_field)
             if (isCount == True):
                 step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                 self.sql_steps.add_step(step)
-            return self.sort(result.get('data'), select_field=select_field)
-        elif (search == "relate"):
-            result = self.get_relate(keyword)
+            return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
+        elif (search == "relate" or search == "exact"):
+            result = self.get_exact_or_relate(search, keyword, select_field=select_field, compare_field=compare_field, order_field=order_field)
             if (isCount == True):
-                step = SQL_Step(step_type="Search related keyword", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
+                if (search == "relate"):
+                    step_type = "Search related keyword"
+                elif (search == "exact"):
+                    step_type = "Search exact keyword"
+                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                 self.sql_steps.add_step(step)
-            return self.sort(result.get('data'), select_field=select_field)
-        elif (search == "exact"):
-            result = self.get_exact(keyword, select_field=select_field, compare_field=compare_field)
-            if (isCount == True):
-                step = SQL_Step(step_type="Search exact keyword", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
-                self.sql_steps.add_step(step)
-            return self.sort(result.get('data'), select_field=select_field)
+            return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
         elif (search == "filter"):
             if (keyword == None):
                 return []
@@ -302,15 +338,16 @@ class Database:
                 if (method == None):
                     return []
                 else:
-                    result = self.get_filter(keyword, method)
+                    result = self.get_filter(keyword, method, select_field, order_field)
                     if (isCount == True):
                         step = SQL_Step(step_type="Filter", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'))
                         self.sql_steps.add_step(step)
-                    return self.sort(result.get('data'), select_field=select_field)
+                    return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
+
 
     def print(self, dataset=None):
         if (dataset == None):
-            for data in self.get_all_data():
+            for data in self.get(search="all", isCount=False):
                 print(data)
         else:
             for data in dataset:
@@ -330,8 +367,9 @@ class Database:
 
     # add a directory to the file, currently file directory is "files"
     # "\\" should be adjusted to "/" (Cross-platform problem later should deal with it)
-    def get_filepath(self, filename):
-        return "files" + "/" + filename
+#    def get_filepath(self, filename):
+#        return "files" + "/" + filename
+
 
     def __del__(self):
         print("Disconnected to the database")

@@ -104,6 +104,9 @@ class Show_Data_Package:
         # description entry id
         self.description_text = tk.Text(frame, font=('Arial', self.GUI.modify_leftframe_font), height=10, width=self.GUI.modify_leftframe_width)
 
+        #self.create_date_title = tk.Label(frame, text="Create Date :", font=('Arial', self.GUI.modify_leftframe_font))
+
+
     # row, column is start from corner
     def show_name(self, row, column):
         self.name_title.grid(row=row, column=column, sticky="W", padx=5, pady=8)
@@ -382,6 +385,8 @@ class Page(Root):
 
         # use to save the temporary objects
         self.temporary_obj_list = []
+        # use to save the current_objects_list, but only need to save filepath as it can retrieve from database
+        self.current_filepath_list = []
 
         print("GUI display is ready")
 
@@ -425,7 +430,8 @@ class Page(Root):
         current_listbox = tk.Listbox(right_frame, selectmode="extended", width=self.GUI.modify_listbox_width, height=25)
         current_listbox.grid(row=2, column=3, rowspan=25)
         for data in database.get(search="all", isCount=False, select_field=['filepath']):
-            current_listbox.insert("end", f"{database.extract_filename(data[0])}")
+            self.current_filepath_list.append(data.get('filepath'))
+            current_listbox.insert("end", f"{database.extract_filename(data.get('filepath'))}")
 
         # browse button is used to browse file to open in change_listbox
         browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(new_window, change_listbox))
@@ -473,20 +479,21 @@ class Page(Root):
         change_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=change_listbox, data_package=data_package: self.click_change_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
 
         # move left / right button is used to shift things to database or delete things to database
-        move_in_button = tk.Button(right_frame, text="=>", width=2, height=1, command=None)
+        move_in_button = tk.Button(right_frame, text="=>", width=2, height=1, command=lambda: self.click_move_in(left_frame, data_package, change_listbox, current_listbox))
         move_in_button.grid(row=13, column=2, padx=5)
         move_out_button = tk.Button(right_frame, text="<=", width=2, height=1, command=lambda: self.click_move_out(left_frame, data_package, change_listbox, current_listbox))
         move_out_button.grid(row=14, column=2, padx=5)
 
         # closing new_window event which is clearing all the obj inside self.temporary_obj_list
-        new_window.protocol("WM_DELETE_WINDOW", lambda: self.empty_temporary(new_window))
+        new_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_modify_delte_window(new_window))
 
 
     # this is used to clear out all the things inside the temporary obj list
-    def empty_temporary(self, new_window):
+    def close_add_modify_delte_window(self, new_window):
         for obj in self.temporary_obj_list:
             print(obj['data'].get())
         self.temporary_obj_list = []
+        self.current_filepath_list = []
         new_window.destroy()
 
 
@@ -499,20 +506,27 @@ class Page(Root):
         data_package.reset()
 
         # get the selecting item in current database listbox
-        search_filename = listbox.get(listbox.curselection())
-        current_path = database.get_filepath(search_filename)
+        current_path = self.current_filepath_list[listbox.index(listbox.curselection())]
         data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
+        print("THIS IS TEST")
+        print(data)
+        # ensure the file got a file, otherwise report error
+        try:
+            data = data[0]
+        except:
+            data = {}
+            print("Data missing")
 
-        # this is not a good format vvvvvvvv
         dataDict = {
-            'name': data[0][0],
-            'category': data[0][2],
-            'filename': database.extract_filename(search_filename, filetype=False),
-            'filepath': data[0][1],
-            'creator': data[0][3],
-            'description': data[0][4]
+            'name': data.get('name', None),
+            'category': data.get('category', None),
+            'filename': database.extract_filename(data.get('filepath', None), filetype=False),
+            'filepath': data.get('filepath', None),
+            'creator': data.get('creator', None),
+            'description': data.get('description', None),
+            'created_date': data.get('created_date', None),
+            'last_modify': data.get('last_modify', None)
         }
-        # later need change ^^^^^^^^
 
         data_package.set(**dataDict)
 
@@ -531,7 +545,7 @@ class Page(Root):
         selected_dict = self.temporary_obj_list[selected_index]
 
         # Show the data by sending the data to data_package.set() methods
-        print(selected_dict.get('data').get())
+        #print(selected_dict.get('data').get())
         data_package.set(**selected_dict.get('data').get())
 
 
@@ -558,17 +572,29 @@ class Page(Root):
         for index in remove_index_list:
             selected_dict = self.temporary_obj_list[index]
             if (selected_dict['type'] == "new"):
-                database.add(selected_dict['data'].get())
+                # it takes kwargs, database.Data().get return dictionary
+                database.add(**selected_dict['data'].get())
 
-        #################################################################################
-        #################################################################################
+        # put the filename to the current_listbox
+        for index in remove_index_list:
+            selected_dict = self.temporary_obj_list[index]
+            filepath = selected_dict['data'].get().get('filepath')
+            filename = database.extract_filename(filepath, filetype=True)
+            current_listbox.insert("end", f"{filename}")
+            self.current_filepath_list.append(filepath)
 
-        # delete obj in temporary_obj_list
+        # delete obj in temporary_obj_list, in reverse way it will disorganise the structure
         for index in sorted(remove_index_list, reverse = True):
             self.temporary_obj_list.pop(index)
 
-        # update treeview after you removing something in database
-        self.show_table(database.get(search="all", isCount=False))
+        # ensure it update when there is something added
+        if (remove_num > 0):
+            # highlight the add items
+            start = current_listbox.index("end") - remove_num
+            current_listbox.selection_set( start, "end")
+
+            # update treeview after you removing something in database
+            self.show_table(database.get(search="all", isCount=False))
 
 
 
@@ -576,28 +602,35 @@ class Page(Root):
         # close the left_frame
         left_frame.grid_forget()
         data_package.reset()
+
         # move the item from current listbox to change listbox
         delete_item = 0
+        remove_path_index_list = []
         for selected_item in current_listbox.curselection():
             delete_item += 1
             # get the item in current_listbox
             selected_filename = current_listbox.get(selected_item)
-
-            current_path = database.get_filepath(selected_filename)
+            remove_path_index_list.append(current_listbox.index(selected_item))
+            current_path = self.current_filepath_list[current_listbox.index(selected_item)]
             data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
 
-            # this is not a good format vvvvvvvv
+            # ensure the file got a file, otherwise report error
+            try:
+                data = data[0]
+            except:
+                data = {}
+                print("Data missing")
+
             dataDict = {
-                'name': data[0][0],
-                'category': data[0][2],
-                'filename': database.extract_filename(selected_filename, filetype=False),
-                'filepath': data[0][1],
-                'creator': data[0][3],
-                'description': data[0][4],
-                'created_date': data[0][5],
-                'last_modify': data[0][6]
+                'name': data.get('name', None),
+                'category': data.get('category', None),
+                'filename': database.extract_filename(data.get('filepath', None), filetype=False),
+                'filepath': data.get('filepath', None),
+                'creator': data.get('creator', None),
+                'description': data.get('description', None),
+                'created_date': data.get('created_date', None),
+                'last_modify': data.get('last_modify', None)
             }
-            # later need change ^^^^^^^^
 
             change_listbox.insert("end", f"{selected_filename}")
             self.temporary_obj_list.append({ 'data':db.Data(**dataDict),'type':"old"})
@@ -605,6 +638,11 @@ class Page(Root):
         # delete item in from current listbox
         for delete_item in range(0, delete_item):
             current_listbox.delete(current_listbox.curselection()[0])
+
+        # delete filepath in current_filepath_list, in reverse way it will disorganise the structure
+        for delete_index in sorted(remove_path_index_list, reverse = True):
+            self.current_filepath_list.pop(delete_index)
+
         current_listbox.select_clear(0, "end")
 
 
@@ -756,7 +794,7 @@ class Page(Root):
         self.treeview.delete(*self.treeview.get_children())
         count = 1
         for data in dataset:
-            self.treeview.insert("", "end", f"item{count}", values=(data[0], database.extract_filename(data[1]), data[2], data[3], data[4]))
+            self.treeview.insert("", "end", f"item{count}", values=(data.get('name'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
             count += 1
         pass
 
@@ -786,7 +824,8 @@ database.add(name="A Solar Panel 2", filepath="files/solar_panel_proposal_2.txt"
 database.add(name="B Solar Panel 3", filepath="files/solar_panel_proposal_3.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
-    database.add(name=f"{random.randint(1,300)} Solar Panel", filepath=f"files/solar_panel_proposal_{random.randint(1,1000)}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+    num = random.randint(1,1000)
+    database.add(name=f"{num} Solar Panel", filepath=f"files/solar_panel_proposal_{num}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 database.add(name="Smart Lighting", filepath="files/smart_lighting.pdf", category="smart device")
 database.add(name="IAQ Smart Device", filepath="files/indoor_air_quality_device.pdf", category="smart device,indoor air quality")
