@@ -28,9 +28,8 @@ class GUI:
             self.treeview_popup_pady = 5
             self.treeview_popup_labelframe_padx = 10
             self.treeview_popup_labelframe_pady = 10
-            self.treeview_popup_labelframe_width = 300
-            self.treeview_popup_labelframe_height = 300
             self.treeview_popup_data_wraplength = 100
+            self.treeview_popup_data_wraplength = 400
 
         elif (os_platform == "Windows"):
 
@@ -43,6 +42,16 @@ class GUI:
             self.modify_leftframe_wraplength = 200
             self.modify_leftframe_width = 32
             self.modify_leftframe_font = ('Arial', 9)
+
+            # Click Treeviews POPUP WINDOW CONSTANT
+            self.treeview_popup_font = ('Arial', 10)
+            self.treeview_popup_width = 340
+            self.treeview_popup_height = 400
+            self.treeview_popup_padx = 12
+            self.treeview_popup_pady = 5
+            self.treeview_popup_labelframe_padx = 10
+            self.treeview_popup_labelframe_pady = 10
+            self.treeview_popup_data_wraplength = 182
 
 
 def get_platform():
@@ -775,63 +784,77 @@ class Page(Root):
     def click_treeview_item(self, event):
         new_window = self.create_window(self.GUI.treeview_popup_width, self.GUI.treeview_popup_height)
 
-        labelframe = tk.LabelFrame(new_window, text="")
+        labelframe = tk.LabelFrame(new_window, text="Detail Information", font=self.GUI.treeview_popup_font)
         labelframe.grid(row=0,column=0, padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
 
         # name title label
         name_title = tk.Label(labelframe, text="Name :", font=self.GUI.treeview_popup_font)
-        name_title.grid(row=0, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        name_title.grid(row=0, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # creator
         creator_title = tk.Label(labelframe, text="Creator :", font=self.GUI.treeview_popup_font)
-        creator_title.grid(row=1, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        creator_title.grid(row=1, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # category title label
         category_title = tk.Label(labelframe, text="Category :", font=self.GUI.treeview_popup_font)
-        category_title.grid(row=2, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        category_title.grid(row=2, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # filename title label
         filename_title = tk.Label(labelframe, text="Filename :", font=self.GUI.treeview_popup_font)
-        filename_title.grid(row=3, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        filename_title.grid(row=3, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # filepath title label
         filepath_title = tk.Label(labelframe, text="Filepath :", font=self.GUI.treeview_popup_font)
-        filepath_title.grid(row=4, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        filepath_title.grid(row=4, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # description title label
         # category title label
         description_title = tk.Label(labelframe, text="Description :", font=self.GUI.treeview_popup_font)
-        description_title.grid(row=5, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        description_title.grid(row=5, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # last modify title
         last_modify_title = tk.Label(labelframe, text="Last Modify :", font=self.GUI.treeview_popup_font)
-        last_modify_title.grid(row=6, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        last_modify_title.grid(row=6, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # create date title
         create_date_title = tk.Label(labelframe, text="Create Date :", font=self.GUI.treeview_popup_font)
-        create_date_title.grid(row=7, column=0, sticky="W", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        create_date_title.grid(row=7, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
 
-        selected_item = self.treeview.item(self.treeview.focus())
-        filepath = selected_item.get('values')[1]
-        data = database.get(search="exact",isCount=False, keyword=filepath, select_field="all", compare_field="filepath")
-
+        selected_item_filepath = self.treeview.selection()[0]
+        data = database.get(search="exact",isCount=False, keyword=[selected_item_filepath], select_field="all", compare_field=["filepath"])[0]
         # name data
-        name = tk.Label(labelframe, text=data.get('name'), font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength)
-        name.grid(row=0, column=1, sticky="W")
+        name_id = tk.StringVar()
+        name_id.set(data.get('name'))
+        name = tk.Label(labelframe, textvariable=name_id, font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        name.grid(row=0, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # creator data
-        creator = tk.Label(labelframe, text=data.get('name'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        creator.grid(row=1, column=1, sticky="W")
+        creator_id = tk.StringVar()
+        creator_id.set(data.get('creator'))
+        creator = tk.Label(labelframe, textvariable=creator_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        creator.grid(row=1, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # category data
-        category = tk.Label(labelframe, text=data.get('category'), font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength)
-        category.grid(row=2, column=1, sticky="W")
-        # category data
-        filename = tk.Label(labelframe, text=database.extract_filename(data.get('filepath'),filetype=True), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        filename.grid(row=3, column=1, sticky="W")
+        category_id = tk.StringVar()
+        category_id.set(data.get('category'))
+        category = tk.Label(labelframe, textvariable=category_id, font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        category.grid(row=2, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
+        # filename data
+        filename_id = tk.StringVar()
+        filename_id.set(database.extract_filename(data.get('filepath'),filetype=False))
+        filename = tk.Label(labelframe, textvariable=filename_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        filename.grid(row=3, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # filepath data
-        filepath = tk.Label(labelframe, text=data.get('filepath'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        filepath.grid(row=4, column=1, sticky="W")
+        filepath_id = tk.StringVar()
+        filepath_id.set(data.get('filepath'))
+        filepath = tk.Label(labelframe, textvariable=filepath_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        filepath.grid(row=4, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # description data
-        description = tk.Label(labelframe, text=data.get('description'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        description.grid(row=5, column=1, sticky="W")
+        description_id = tk.StringVar()
+        description_id.set(data.get('description'))
+        description = tk.Label(labelframe, textvariable=description_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        description.grid(row=5, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # last modify data
-        last_modify = tk.Label(labelframe, text=data.get('last_modify'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        last_modify.grid(row=6, column=1, sticky="W")
+        last_modify_id = tk.StringVar()
+        last_modify_id.set(data.get('last_modify'))
+        last_modify = tk.Label(labelframe, textvariable=last_modify_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        last_modify.grid(row=6, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # create date data
-        create_date = tk.Label(labelframe, text=data.get('create_date'), font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength)
-        create_date.grid(row=7, column=1, sticky="W")
+        create_date_id = tk.StringVar()
+        create_date_id.set(data.get('create_date'))
+        create_date = tk.Label(labelframe, textvariable=create_date_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
+        create_date.grid(row=7, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
 
 
     def add_step(self):
@@ -861,6 +884,7 @@ class Page(Root):
         for button in self.checkbuttons:
             if (button.value_id.get() == 1):
                 filterList.append(button.category)
+        # keyword => list
         self.show_table(database.get(search="filter", isCount=True, keyword=filterList, method=filtertype))
         self.add_step()
 
@@ -882,7 +906,7 @@ class Page(Root):
 
 
     def search(self, search_method, keyword):
-        self.show_table(database.get(search=search_method, isCount=True, keyword=keyword))
+        self.show_table(database.get(search=search_method, isCount=True, keyword=[keyword]))
         self.add_step()
 
 
@@ -890,7 +914,8 @@ class Page(Root):
         self.treeview.delete(*self.treeview.get_children())
         count = 1
         for data in dataset:
-            self.treeview.insert("", "end", f"item{count}", values=(data.get('name'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
+            # treeview.insert(parent id, index, iid, values)
+            self.treeview.insert("", "end", f"{data.get('filepath')}" , values=(data.get('name'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
             count += 1
         pass
 
@@ -912,20 +937,26 @@ database.add_category("Lithium battery")
 database.add_category("vehicle")
 database.add_category("energy efficiency")
 
-database.add(name="D Solar Panel 1", filepath="files/solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(name="F Solar Panel 1", filepath="files/solar_panel_proposal_5.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(name="E Solar Panel 1", filepath="files/solar_panel_proposal_6.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(name="C Solar Panel 1", filepath="files/solar_panel_proposal_1.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="A Solar Panel 2", filepath="files/solar_panel_proposal_2.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="B Solar Panel 3", filepath="files/solar_panel_proposal_3.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+file_sep = ""
+if (get_platform() == "OS X"):
+    file_sep = "/"
+elif (get_platform() == "Windows"):
+    file_sep = "\\"
+
+database.add(name="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(name="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
+database.add(name="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
+database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
     num = random.randint(1,1000)
-    database.add(name=f"{num} Solar Panel", filepath=f"files/solar_panel_proposal_{num}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+    database.add(name=f"{num} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{num}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-database.add(name="Smart Lighting", filepath="files/smart_lighting.pdf", category="smart device")
-database.add(name="IAQ Smart Device", filepath="files/indoor_air_quality_device.pdf", category="smart device,indoor air quality")
-database.add(name="Air filter Device", filepath="files/air_filter_device.pdf", category="indoor air quality")
+database.add(name="Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
+database.add(name="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
+database.add(name="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
 
 if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()

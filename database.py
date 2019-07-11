@@ -24,7 +24,7 @@ class Data:
         self.category = kwargs.get('category', None)
         self.creator = kwargs.get('creator', None)
         self.description = kwargs.get('description', None)
-        self.last_modify =  kwargs.get('last_modify', None)
+        self.last_modify = kwargs.get('last_modify', None)
         self.create_date = kwargs.get('create_date', None)
 
     def set(self, **kwargs):
@@ -84,18 +84,18 @@ class Data:
                 elif (field == "create_date"):
                     return self.create_date
         else:
-            return {'name': self.name, 'obj_id':self.obj_id, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify':self.last_modify, 'create_date':self.create_date}
+            return {'name': self.name, 'obj_id': self.obj_id, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify': self.last_modify, 'create_date': self.create_date}
 
     def modify(self, **kwargs):
         modify_set = {
-            'name' : kwargs.get('name', self.name),
-            'filepath' : kwargs.get('filepath', self.filepath),
-            'filename' : kwargs.get('filename', self.filename),
-            'category' : kwargs.get('category', self.category),
-            'creator' : kwargs.get('creator', self.creator),
-            'create_date' : kwargs.get('create_date', self.create_date),
-            'last_modify' : kwargs.get('last_modify', self.last_modify),
-            'description' : kwargs.get('description', self.description)
+            'name': kwargs.get('name', self.name),
+            'filepath': kwargs.get('filepath', self.filepath),
+            'filename': kwargs.get('filename', self.filename),
+            'category': kwargs.get('category', self.category),
+            'creator': kwargs.get('creator', self.creator),
+            'create_date': kwargs.get('create_date', self.create_date),
+            'last_modify': kwargs.get('last_modify', self.last_modify),
+            'description': kwargs.get('description', self.description)
         }
 
         if (modify_set.get('description', None) != None):
@@ -109,6 +109,7 @@ class SQL:
     def __init__(self, sql, target=None):
         self.command = sql
         self.target = target
+
 
 class SQL_Solution:
     def __init__(self, is_procedure_search):
@@ -137,7 +138,7 @@ class SQL_Solution:
 
 
 class SQL_Step:
-    def __init__(self, step_type, step_num, sql ,keyword, method, select_field, compare_field, order_field):
+    def __init__(self, step_type, step_num, sql, keyword, method, select_field, compare_field, order_field):
         # step_num is started from 1 to ...
         self.step_num = step_num
         self.step_type = step_type
@@ -147,6 +148,7 @@ class SQL_Step:
         self.select_field = select_field
         self.compare_field = compare_field
         self.order_field = order_field
+
 
 class Database:
     def __init__(self):
@@ -200,10 +202,9 @@ class Database:
     def add(self, **kwargs):
         current_time = DateTime().get_current_time()
         command = '''INSERT INTO files_table (name, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
-        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), kwargs.get('current_time',current_time), current_time)
+        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
         sql = SQL(command, file_obj)
         self.sql_action(sql)
-
 
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
@@ -289,18 +290,28 @@ class Database:
 
         if (compare_field == None):
             if (search == "exact"):
-                command = command + ''' WHERE name=? COLLATE NOCASE'''
-                target = (keyword,)
+                command = command + ''' WHERE '''
+                for i in range(len(keyword)):
+                    command = command + ''' name = ? COLLATE NOCASE '''
+                    if (i < len(keyword) - 1):
+                        command = command + ''' and '''
+                for word in keyword:
+                    target = target + (word,)
             elif (search == "relate"):
-                command = command + ''' WHERE name LIKE ? COLLATE NOCASE'''
-                target = ('%' + keyword + '%',)
+                command = command + ''' WHERE '''
+                for i in range(len(keyword)):
+                    command = command + ''' name LIKE ? COLLATE NOCASE '''
+                    if (i < len(keyword) - 1):
+                        command = command + ''' and '''
+                for word in keyword:
+                    target = ('%' + word + '%',)
         else:
             if (search == "exact"):
                 if (len(compare_field) > 0):
                     command = command + ''' WHERE '''
                 count = 0
                 for string in compare_field:
-                    command = command + string + ''' =? COLLATE NOCASE '''
+                    command = command + string + ''' = ? COLLATE NOCASE '''
                     if (count < len(compare_field) - 1):
                         command = command + ''' and '''
                     count += 1
@@ -318,6 +329,8 @@ class Database:
                     target = target + ('%' + word + '%',)
 
         command = self.set_order_command(command, select_field, order_field)
+        print(command)
+        print(target)
         sql = SQL(command, target)
         return self.sql_search(sql)
 
@@ -348,7 +361,7 @@ class Database:
                 count = 0
                 for field in order_field:
                     if (field in select_field):
-                        if (count < len(order_field)-1):
+                        if (count < len(order_field) - 1):
                             command = command + ''' ''' + field + ''' ASC, '''
                         else:
                             command = command + ''' ''' + field + ''' ASC '''
@@ -380,10 +393,11 @@ class Database:
     # compare field is the field you want the database to compare your keyword to which column
     # order field is the field you want to sort
     def get(self, search, isCount, keyword=None, method=None, select_field=None, compare_field=None, order_field=None):
+        print(keyword)
         if (search == "all"):
-            result = self.get_all_data(select_field=select_field,compare_field=compare_field,order_field=order_field)
+            result = self.get_all_data(select_field=select_field, compare_field=compare_field, order_field=order_field)
             if (isCount == True):
-                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
+                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                 self.sql_steps.add_step(step)
             return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
         elif (search == "relate" or search == "exact"):
@@ -393,7 +407,7 @@ class Database:
                     step_type = "Search related keyword"
                 elif (search == "exact"):
                     step_type = "Search exact keyword"
-                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
+                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                 self.sql_steps.add_step(step)
             return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
         elif (search == "filter"):
@@ -409,10 +423,9 @@ class Database:
                             step_type = "Filter Related"
                         elif (method == "intersect"):
                             step_type = "Filter Exact"
-                        step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'),keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
+                        step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), keyword=keyword, method=method, select_field=select_field, compare_field=compare_field, order_field=order_field)
                         self.sql_steps.add_step(step)
                     return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
-
 
     def print(self, dataset=None):
         if (dataset == None):
@@ -438,7 +451,6 @@ class Database:
     # "\\" should be adjusted to "/" (Cross-platform problem later should deal with it)
 #    def get_filepath(self, filename):
 #        return "files" + "/" + filename
-
 
     def __del__(self):
         print("Disconnected to the database")
