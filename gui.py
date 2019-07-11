@@ -59,6 +59,9 @@ class Show_Data_Package:
         # used to compare
         self.new_data = db.Data()
 
+        # this contains which data leftframe is actually showing
+        self.selected_index = None
+
         self.GUI = GUI(get_platform())
         # name title label
         self.name_title = tk.Label(frame, text="Name :", font=('Arial', self.GUI.modify_leftframe_font))
@@ -158,7 +161,7 @@ class Show_Data_Package:
         self.create_date.grid(row=row, column=column + 1, sticky="W", padx=5, pady=8)
 
 
-    def set(self, **kwargs):
+    def set(self, index, **kwargs):
         name = kwargs.get('name', None)
         creator = kwargs.get('creator', None)
         category = kwargs.get('category', None)
@@ -167,7 +170,7 @@ class Show_Data_Package:
         description = kwargs.get('description', None)
         last_modify = kwargs.get('last_modify', None)
         create_date = kwargs.get('create_date', None)
-
+        self.selected_index = index
         self.data.set(**kwargs)
         self.new_data.set(**kwargs)
 
@@ -237,6 +240,7 @@ class Show_Data_Package:
 
 
     def reset(self):
+        self.selected_index = None
         self.name_entry_id.set("")
         self.current_filename_id.set("")
         self.current_filepath_id.set("")
@@ -542,8 +546,9 @@ class Page(Root):
 
         data_package.reset()
 
+        selected_index = listbox.index(listbox.curselection())
         # get the selecting item in current database listbox
-        current_path = self.current_filepath_list[listbox.index(listbox.curselection())]
+        current_path = self.current_filepath_list[selected_index]
         data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
         print("THIS IS TEST")
         print(data)
@@ -565,7 +570,7 @@ class Page(Root):
             'last_modify': data.get('last_modify', None)
         }
 
-        data_package.set(**dataDict)
+        data_package.set(selected_index ,**dataDict)
 
 
     def click_change_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
@@ -583,7 +588,7 @@ class Page(Root):
 
         # Show the data by sending the data to data_package.set() methods
         #print(selected_dict.get('data').get())
-        data_package.set(**selected_dict.get('data').get())
+        data_package.set(selected_index ,**selected_dict.get('data').get())
 
 
     def click_move_in(self, left_frame, data_package, change_listbox, current_listbox):
@@ -611,11 +616,14 @@ class Page(Root):
             if (selected_dict['type'] == "new"):
                 # it takes kwargs, database.Data().get return dictionary
                 database.add(**selected_dict['data'].get())
+            elif (selected_dict['type'] == "old"):
+                obj_id = selected_dict['data'].get("obj_id")
+                database.update_data(obj_id, **selected_dict['data'].get())
 
         # put the filename to the current_listbox
         for index in remove_index_list:
             selected_dict = self.temporary_obj_list[index]
-            filepath = selected_dict['data'].get().get('filepath')
+            filepath = selected_dict['data'].get("filepath")
             filename = database.extract_filename(filepath, filetype=True)
             current_listbox.insert("end", f"{filename}")
             self.current_filepath_list.append(filepath)
@@ -697,7 +705,7 @@ class Page(Root):
     # click delete files in change_listbox
     def click_delete(self, left_frame, data_package, change_listbox):
         left_frame.grid_forget()
-
+        data_package.reset()
         # saves the index to remove items in self.temporary_obj_list
         remove_index_list = []
         remove_num = 0
@@ -716,7 +724,7 @@ class Page(Root):
         for index in remove_index_list:
             # "old" is the data from the database
             if (self.temporary_obj_list[index].get('type') == "old"):
-                delete_file_path = self.temporary_obj_list[index]['data'].get()['filepath']
+                delete_file_path = self.temporary_obj_list[index]['data'].get("obj_id")
                 database.delete_data(delete_file_path)
 
         # delete obj in temporary_obj_list
@@ -730,10 +738,12 @@ class Page(Root):
 
     # click save button (it should be saving temporary, not in the database)
     def click_save(self, data_package, listbox):
-        selected_index = listbox.index(listbox.curselection())
+        print("click save")
         data_package.update_new_data()
+        # retrieving the selected index from data package
+        selected_index = data_package.selected_index
         self.temporary_obj_list[selected_index]['data'].set(**data_package.new_data.get())
-
+        print(self.temporary_obj_list[selected_index]['data'].get())
 
     # click update button
     def click_update(self, data_package):
@@ -744,7 +754,8 @@ class Page(Root):
         # return True then no different, return False then have difference
         if (data_package.compare_value() == False):
             # have difference, needs to update the database
-            database.update_data(original_filepath=data_package.data.get()['filepath'], **data_package.new_data.get())
+            # obj_id is the original filepath, it may want to change the filepath
+            database.update_data(original_filepath=data_package.data.get('obj_id'), **data_package.new_data.get())
             self.show_table(database.get(search="all", isCount=False))
 
 

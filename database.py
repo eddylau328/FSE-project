@@ -18,6 +18,7 @@ class DateTime:
 class Data:
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
+        self.obj_id = kwargs.get('filepath', None)
         self.filepath = kwargs.get('filepath', None)
         self.filename = kwargs.get('filename', None)
         self.category = kwargs.get('category', None)
@@ -39,8 +40,51 @@ class Data:
         self.last_modify = modify_set.get('last_modify')
         self.description = modify_set.get('description')
 
-    def get(self):
-        return {'name': self.name, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify':self.last_modify, 'create_date':self.create_date}
+    def get(self, *args):
+        get_dict = {}
+        if (len(args) > 1):
+            for field in args:
+                if (field == "name"):
+                    get_dict[field] = self.name
+                elif (field == "obj_id"):
+                    get_dict[field] = self.obj_id
+                elif (field == "filepath"):
+                    get_dict[field] = self.filepath
+                elif (field == "filename"):
+                    get_dict[field] = self.filename
+                elif (field == "category"):
+                    get_dict[field] = self.category
+                elif (field == "creator"):
+                    get_dict[field] = self.creator
+                elif (field == "description"):
+                    get_dict[field] = self.description
+                elif (field == "last_modify"):
+                    get_dict[field] = self.last_modify
+                elif (field == "create_date"):
+                    get_dict[field] = self.create_date
+            return get_dict
+        elif (len(args) == 1):
+            for field in args:
+                if (field == "name"):
+                    return self.name
+                elif (field == "obj_id"):
+                    return self.obj_id
+                elif (field == "filepath"):
+                    return self.filepath
+                elif (field == "filename"):
+                    return self.filename
+                elif (field == "category"):
+                    return self.category
+                elif (field == "creator"):
+                    return self.creator
+                elif (field == "description"):
+                    return self.description
+                elif (field == "last_modify"):
+                    return self.last_modify
+                elif (field == "create_date"):
+                    return self.create_date
+        else:
+            return {'name': self.name, 'obj_id':self.obj_id, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify':self.last_modify, 'create_date':self.create_date}
 
     def modify(self, **kwargs):
         modify_set = {
