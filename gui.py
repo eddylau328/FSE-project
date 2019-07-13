@@ -28,8 +28,7 @@ class GUI:
             self.treeview_popup_pady = 5
             self.treeview_popup_labelframe_padx = 10
             self.treeview_popup_labelframe_pady = 10
-            self.treeview_popup_data_wraplength = 100
-            self.treeview_popup_data_wraplength = 400
+            self.treeview_popup_data_wraplength = 260
 
         elif (os_platform == "Windows"):
 
@@ -338,7 +337,7 @@ class Page(Root):
         self.exact_radiobutton.grid(row=4, column=5, sticky="W")
 
         # add button
-        self.add_button = tk.Button(self.search_title, text="Add / Delete Files", command=lambda: self.add_delete_modify_files())
+        self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
         self.add_button.grid(row=4, column=6, sticky="W")
 
         # skip the line for some spaces
@@ -347,7 +346,7 @@ class Page(Root):
         self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial', 16))
         self.result_title.grid(row=6, column=1, rowspan=100, columnspan=10)
         # table
-        self.treeview = ttk.Treeview(self.result_title, height=28)
+        self.treeview = ttk.Treeview(self.result_title, height=28, selectmode="browse")
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
         self.treeview.pack(side="left", expand=True, fill=tk.Y)
         # set up the columns and headings
@@ -950,7 +949,7 @@ database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_prop
 database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-for i in range(1, 1000):
+for i in range(1, 10):
     database.add(name=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 database.add(name="Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
@@ -961,3 +960,9 @@ if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()
 else:
     print("Sorry. The application does not support %s yet." % get_platform())
+
+command = '''SELECT * FROM files_table WHERE name LIKE solar COLLATE NOCASE and name LIKE panel COLLATE NOCASE and name LIKE D COLLATE NOCASE'''
+
+sql = SQL(command, None)
+
+database.sql_search(sql)

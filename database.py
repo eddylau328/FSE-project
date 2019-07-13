@@ -5,7 +5,6 @@ import datetime
 import ntpath
 import os
 
-
 class DateTime:
     def __init__(self):
         pass
@@ -447,10 +446,169 @@ class Database:
         else:
             return os.path.splitext(ntpath.basename(path))[0]
 
+    # this is used to format all the searching input command into
+    # => keyword, compare_field, logic, searching rules, order, etc...
+    # => Personal i think this is the hardest
+    '''
+    Situations:
+
+    "-keywords" : do not contain this word
+    "3...8" : range from 3 to 8
+    " "keywords" " : exact keyword
+    " word1 word2 " : contains word1 and word2
+    " word1 or word2" : contains word1 or word2
+
+    1. Enter: "solar"
+        keyword = ['solar']
+        compare_field = ['name']
+        order_field = ['category', 'name']
+        logic_field = []
+
+    2. Enter: "solar wind" , "solar, wind" , "[solar, wind]"
+        keyword = ['solar', 'wind']
+        compare_field = ['name', 'name']
+        order_field = ['category', 'name']
+        search = [LIKE %word%, LIKE %word%]
+        logic_field = [and]
+
+    3. Enter: "solar, filename=wind"
+        keyword = ['solar', 'wind']
+        compare_field = ['name', 'filename']
+        order_field = ['category', 'name']
+        search = [LIKE %word%, LIKE %word%]
+        logic_field = [and]
+
+    4. Enter: "name=solar or filename=[solar, proposal_1]"
+        keyword = ['solar', 'solar', 'proposal_1']
+        compare_field =['name', 'filename', 'filename']
+        order_field = ['category', 'name']
+
+    '''
+
+    def translate_search_command(self, raw_command):
+        #replace all the space to ,
+        print(raw_command)
+        space_2_comma = raw_command.replace(" ", ",")
+        # this is used to make the command in formatted
+        space_2_comma = space_2_comma.replace("[", ",[,")
+        space_2_comma = space_2_comma.replace("]", ",],")
+        space_2_comma = space_2_comma.replace("=", ",=,")
+        space_2_comma = space_2_comma.replace("(", ",(,")
+        space_2_comma = space_2_comma.replace(")", ",),")
+        #print(space_2_comma)
+
+        # may have more than one comma, replace repeat comma to single comma
+        comma_2_chunks = space_2_comma
+        while (",," in comma_2_chunks):
+            comma_2_chunks = comma_2_chunks.replace(",,", ",")
+
+        # make it into chunks in list
+        chunks = comma_2_chunks.split(",")
+        # remove all the empty string
+        while ("" in chunks):
+            chunks.pop(chunks.index(""))
+
+        #print(chunks)
+        insert_index_list = []
+        for i in range(0, len(chunks)-1):
+            if (chunks[i] == "(" or chunks[i] == "=" or chunks[i] == "or" or chunks[i] == "and" or chunks[i] == "["):
+                pass
+            else:
+                if (chunks[i+1] == "=" or chunks[i+1] == "or" or chunks[i+1] == "and" or chunks[i+1] == ")" or chunks[i+1] == "]"):
+                    pass
+                else:
+                    insert_index_list.append(i+1)
+
+        for index in sorted(insert_index_list, reverse=True):
+            chunks.insert(index, "and")
+        #print(chunks)
+        # make list of words into sublist
+        format_chunks = chunks
+        while ("[" in chunks and "]" in chunks):
+            start = chunks.index("[")
+            end = chunks.index("]")
+            # list[first:last], last is not included
+            sublist = format_chunks[start + 1 : end]
+            for i in range (start, end+1):
+                format_chunks.pop(start)
+            format_chunks.insert(start, sublist)
+
+        # if any "=" sign, format it to a list
+        while ("=" in format_chunks):
+            index = chunks.index("=")
+            # list[first:last], last is not included
+            sublist = format_chunks[index-1 : index+2]
+            sublist.pop(sublist.index("="))
+            for i in range (index-1, index+2):
+                format_chunks.pop(index-1)
+            format_chunks.insert(index-1, sublist)
+
+        #keyword, compare_field, logic, searching rules, order
+        # seach pair list is contains all the search pair obj
+        search_pair_list = []
+        logic_list = []
+
+        # transforming it back to what we want
+        while (len(format_chunks) is not 0):
+
+            chunk = format_chunks.pop(0)
+            if (chunk != "and" and chunk != "or" and chunk != "(" and chunk != ")"):
+                # save as the search pair
+                # ['filename','solar.txt']
+                if (type(chunk) is list):
+                    field = chunk[0]
+                    # check chunk[1] is or is not a keyword list
+                    if (type(chunk[1]) is list):
+                        words = chunk[1]
+                        while (len(words) is not 0):
+                            word = words.pop(0)
+                            if (word == "("):
+                                logic_list.append("(")
+                            elif (word == ")"):
+                                logic_list.append(")")
+                            elif (word == "and"):
+                                logic_list.append("and")
+                            elif (word == "or"):
+                                logic_list.append("or")
+                            else:
+                                search_pair_list.append(Search_Pair(word, field))
+                    else:
+                        word = chunk[1]
+                        search_pair_list.append(Search_Pair(word, field))
+                else:
+                    word = chunk
+                    # "name" is preset
+                    search_pair_list.append(Search_Pair(word, "name"))
+            else:
+                if (chunk == "("):
+                    logic_list.append("(")
+                elif (chunk == ")"):
+                    logic_list.append(")")
+                elif (chunk == "and"):
+                    logic_counter = 0
+                    logic_list.append("and")
+                elif (chunk == "or"):
+                    logic_counter = 0
+                    logic_list.append("or")
+
+
+        for pair in search_pair_list:
+            print(pair.field+"="+pair.keyword)
+
+        print(logic_list)
+
+        search_package = {
+        }
+
     # add a directory to the file, currently file directory is "files"
     # "\\" should be adjusted to "/" (Cross-platform problem later should deal with it)
-#    def get_filepath(self, filename):
-#        return "files" + "/" + filename
+    def get_filepath(self, filename):
+        return "files" + "/" + filename
 
     def __del__(self):
         print("Disconnected to the database")
+
+class Search_Pair:
+    def __init__(self, keyword, compare_field):
+        self.keyword = keyword
+        self.field = compare_field
