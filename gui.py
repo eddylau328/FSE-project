@@ -405,7 +405,7 @@ class Page(Root):
         self.step_procedure_search_checkbutton.pack(side="bottom", fill=tk.X)
 
         # used to save the steps the user took
-        self.step_listbox = tk.Listbox(self.step_tab)
+        self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
         # step_scrollbar
         self.step_scrollbar = ttk.Scrollbar(self.step_tab, orient="vertical")
@@ -843,14 +843,12 @@ class Page(Root):
 
     # event is trigger by double clicking the self.step_listbox item
     def click_step_listbox_item(self, event):
-        # receive the index which the user select
+        # receive the index which the user select, it is tuple
         index = self.step_listbox.curselection()[0]
         # index is equal to the step num
         step = database.get_sql_step(step_num=index)
         # unorganised format
-        result = database.sql_search(step.sql).get('data')
-        # unorganised format => dictionary
-        result = database.format_dataset_to_dictionary(result, step.select_field)
+        result = database.get(isCount=False, search_package=step.search_package)
         self.show_table(result)
 
 
