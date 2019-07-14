@@ -62,16 +62,6 @@ def get_platform():
         return sys.platform
 
     return platforms[sys.platform]
-'''
-if get all
-    [0] => name
-    [1] => filepath
-    [2] => category
-    [3] => creator
-    [4] => description
-    [5] => create date
-    [6] => last modify
-'''
 
 class Show_Data_Package:
     def __init__(self, frame):
@@ -85,7 +75,7 @@ class Show_Data_Package:
 
         self.GUI = GUI(get_platform())
         # name title label
-        self.name_title = tk.Label(frame, text="Name :", font=self.GUI.modify_leftframe_font)
+        self.name_title = tk.Label(frame, text="Title :", font=self.GUI.modify_leftframe_font)
         # name entry id
         self.name_entry_id = tk.StringVar()
         self.name_entry_id.set("")
@@ -183,7 +173,7 @@ class Show_Data_Package:
 
 
     def set(self, index, **kwargs):
-        name = kwargs.get('name', None)
+        title = kwargs.get('title', None)
         creator = kwargs.get('creator', None)
         category = kwargs.get('category', None)
         filename = kwargs.get('filename', None)
@@ -195,8 +185,8 @@ class Show_Data_Package:
         self.data.set(**kwargs)
         self.new_data.set(**kwargs)
 
-        if (name != None):
-            self.name_entry_id.set(name)
+        if (title != None):
+            self.name_entry_id.set(title)
         else:
             self.name_entry_id.set("")
         if ( creator != None):
@@ -232,7 +222,7 @@ class Show_Data_Package:
     def update_new_data(self):
         #  dataset -> made need some corrections
         dataset = {
-            'name' : self.name_entry_id.get(),
+            'title' : self.name_entry_id.get(),
             'filepath' : self.current_filepath_id.get(),
             'filename' : self.current_filename_id.get(),
             'category' : self.category_id.get(),
@@ -247,7 +237,7 @@ class Show_Data_Package:
         dataset = self.data.get()
         newdataset = self.new_data.get()
         isSame = True
-        if (dataset['name'] != newdataset['name']):
+        if (dataset['title'] != newdataset['title']):
             isSame = False
         if (dataset['filename'] != newdataset['filename']):
             isSame = False
@@ -339,14 +329,14 @@ class Page(Root):
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
         self.treeview.pack(side="left", expand=True, fill=tk.Y)
         # set up the columns and headings
-        self.treeview["columns"] = ["name", "filepath", "creator", "last_modify", "category"]
+        self.treeview["columns"] = ["title", "filepath", "creator", "last_modify", "category"]
         self.treeview["show"] = "headings"
-        self.treeview.heading("name", text="Title")
+        self.treeview.heading("title", text="Title")
         self.treeview.heading("filepath", text="File Name")
         self.treeview.heading("creator", text="Creator")
         self.treeview.heading("last_modify", text="Last Modify")
         self.treeview.heading("category", text="Category")
-        self.treeview.column('name', width=150)
+        self.treeview.column('title', width=150)
         self.treeview.column('filepath', width=200)
         self.treeview.column('creator', width=100)
         self.treeview.column('last_modify', width=100)
@@ -429,7 +419,7 @@ class Page(Root):
         self.step_listbox.insert("end", f"Non-Procedural Search")
 
         # show all the current files inside database
-        self.show_table(database.get())
+        self.show_table(database.get(isCount=True))
         # adding the first step of showing all the current files inside database
         self.add_step()
 
@@ -479,7 +469,7 @@ class Page(Root):
 
         current_listbox = tk.Listbox(right_frame, selectmode="extended", width=self.GUI.modify_listbox_width, height=25)
         current_listbox.grid(row=2, column=3, rowspan=25)
-        for data in database.get(isCount=False, select_field=['filepath']):
+        for data in database.get(select_field=['filepath']):
             self.current_filepath_list.append(data.get('filepath'))
             current_listbox.insert("end", f"{database.extract_filename(data.get('filepath'))}")
 
@@ -568,7 +558,7 @@ class Page(Root):
             print("Data missing")
 
         dataDict = {
-            'name': data.get('name', None),
+            'title': data.get('title', None),
             'category': data.get('category', None),
             'filename': database.extract_filename(data.get('filepath', None), filetype=False),
             'filepath': data.get('filepath', None),
@@ -675,7 +665,7 @@ class Page(Root):
                 print("Data missing")
 
             dataDict = {
-                'name': data.get('name', None),
+                'title': data.get('title', None),
                 'category': data.get('category', None),
                 'filename': database.extract_filename(data.get('filepath', None), filetype=False),
                 'filepath': data.get('filepath', None),
@@ -774,7 +764,7 @@ class Page(Root):
         #labelframe.grid(row=0,column=0, padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
         labelframe.pack(fill=tk.BOTH, expand=1, side="top", padx=self.GUI.treeview_popup_labelframe_padx, pady=self.GUI.treeview_popup_labelframe_pady)
         # name title label
-        name_title = tk.Label(labelframe, text="Name :", font=self.GUI.treeview_popup_font)
+        name_title = tk.Label(labelframe, text="Title :", font=self.GUI.treeview_popup_font)
         name_title.grid(row=0, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # creator
         creator_title = tk.Label(labelframe, text="Creator :", font=self.GUI.treeview_popup_font)
@@ -803,7 +793,7 @@ class Page(Root):
         data = database.get(raw_command=f"filepath='{selected_item_filepath}'")[0]
         # name data
         name_id = tk.StringVar()
-        name_id.set(data.get('name'))
+        name_id.set(data.get('title'))
         name = tk.Label(labelframe, textvariable=name_id, font=self.GUI.treeview_popup_font, wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
         name.grid(row=0, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # creator data
@@ -914,7 +904,7 @@ class Page(Root):
         count = 1
         for data in dataset:
             # treeview.insert(parent id, index, iid, values)
-            self.treeview.insert("", "end", f"{data.get('filepath')}" , values=(data.get('name'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
+            self.treeview.insert("", "end", f"{data.get('filepath')}" , values=(data.get('title'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
             count += 1
         pass
 
@@ -942,19 +932,19 @@ if (get_platform() == "OS X"):
 elif (get_platform() == "Windows"):
     file_sep = "\\"
 
-database.add(name="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(name="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(name="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
+database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
+database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
-    database.add(name=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+    database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-database.add(name="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
-database.add(name="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
-database.add(name="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
+database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
+database.add(title="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
+database.add(title="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
 
 if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()

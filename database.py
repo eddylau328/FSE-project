@@ -16,7 +16,7 @@ class DateTime:
 
 class Data:
     def __init__(self, **kwargs):
-        self.name = kwargs.get('name', None)
+        self.title = kwargs.get('title', None)
         self.obj_id = kwargs.get('filepath', None)
         self.filepath = kwargs.get('filepath', None)
         self.filename = kwargs.get('filename', None)
@@ -30,7 +30,7 @@ class Data:
 
         modify_set = self.modify(**kwargs)
 
-        self.name = modify_set.get('name')
+        self.title = modify_set.get('title')
         self.filepath = modify_set.get('filepath')
         self.filename = modify_set.get('filename')
         self.category = modify_set.get('category')
@@ -43,8 +43,8 @@ class Data:
         get_dict = {}
         if (len(args) > 1):
             for field in args:
-                if (field == "name"):
-                    get_dict[field] = self.name
+                if (field == "title"):
+                    get_dict[field] = self.title
                 elif (field == "obj_id"):
                     get_dict[field] = self.obj_id
                 elif (field == "filepath"):
@@ -64,8 +64,8 @@ class Data:
             return get_dict
         elif (len(args) == 1):
             for field in args:
-                if (field == "name"):
-                    return self.name
+                if (field == "title"):
+                    return self.title
                 elif (field == "obj_id"):
                     return self.obj_id
                 elif (field == "filepath"):
@@ -83,11 +83,11 @@ class Data:
                 elif (field == "create_date"):
                     return self.create_date
         else:
-            return {'name': self.name, 'obj_id': self.obj_id, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify': self.last_modify, 'create_date': self.create_date}
+            return {'title': self.title, 'obj_id': self.obj_id, 'filepath': self.filepath, 'filename': self.filename, 'category': self.category, 'creator': self.creator, 'description': self.description, 'last_modify': self.last_modify, 'create_date': self.create_date}
 
     def modify(self, **kwargs):
         modify_set = {
-            'name': kwargs.get('name', self.name),
+            'title': kwargs.get('title', self.title),
             'filepath': kwargs.get('filepath', self.filepath),
             'filename': kwargs.get('filename', self.filename),
             'category': kwargs.get('category', self.category),
@@ -118,8 +118,18 @@ class SQL_Solution:
         self.steps.append(step)
 
     # step_num is assumed to be started from 1 to ...
-    def get_step(self, step_num):
-        return self.steps[step_num - 1]
+    def get_step(self, step_num=None, state=None):
+        if (step_num != None):
+            return self.steps[step_num - 1]
+        else:
+            if (state == "current"):
+                return self.steps[-1]
+            elif (state == "previous"):
+                return self.steps[-2]
+            elif (state == "start"):
+                return self.steps[0]
+            else:
+                return None
 
     def get_num_of_steps(self):
         return len(self.steps)
@@ -138,7 +148,7 @@ class SQL_Step:
             self.step_type = "Search Exact"
         elif (search_type == Search_Type.SEARCH_MIX):
             self.step_type = "Mix Search"
-        self.search_package
+        self.search_package = search_package
 
 class Search_Type(Enum):
     SEARCH_ALL = 1
@@ -171,7 +181,7 @@ class Database:
         # if not exists, it will prevent error
         self.c.execute("""CREATE TABLE if not exists
             files_table (
-                name text,
+                title text,
                 filepath text,
                 category text,
                 creator text,
@@ -180,14 +190,14 @@ class Database:
                 last_modify text
             )""")
         self.conn.commit()
-        # File Name - saves the file name you want to set
+        # File title - saves the file title you want to set
         # Filepath - saves the filepath
         # Categories - saves the category of the file
         # Creator - saves the creator name
         # description - descripes what the file is
         # Create date - saves the created date of the object
         # Last Modify - saves the latest update time and date
-        self.ALL_FIELDS = ("name", "filepath", "category", "creator", "description", "create_date", "last_modify")
+        self.ALL_FIELDS = ("title", "filepath", "category", "creator", "description", "create_date", "last_modify")
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
@@ -213,15 +223,15 @@ class Database:
     # adding files detail to the files_table in the database
     def add(self, **kwargs):
         current_time = DateTime().get_current_time()
-        command = '''INSERT INTO files_table (name, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
-        file_obj = (kwargs.get('name', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', None), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
+        command = '''INSERT INTO files_table (title, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
+        file_obj = (kwargs.get('title', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', ""), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
         sql = SQL(command=command, target=file_obj)
         self.sql_action(sql)
 
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
-        command = '''UPDATE files_table SET name = ?, filepath = ?, category = ?, description = ?, last_modify = ? WHERE filepath =?'''
-        target = (kwargs.get('name'), kwargs.get('filepath'), kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
+        command = '''UPDATE files_table SET title = ?, filepath = ?, category = ?, description = ?, last_modify = ? WHERE filepath =?'''
+        target = (kwargs.get('title'), kwargs.get('filepath'), kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
         sql = SQL(command=command, target=target)
 
         self.sql_action(sql)
@@ -336,17 +346,13 @@ class Database:
         search_dict = self.raw_command_to_search_package(raw_command)
         search_line = search_dict.get('search_line')
         search_method_list = search_dict.get('search_method_list')
-        if (order_field == None):
-            order_field = ['category', 'name']
-        if (select_field == None):
-            select_field = "all"
         search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
         sql_and_type = self.search_package_to_sql(search_package)
         sql = sql_and_type.get('sql')
         search_type = sql_and_type.get('search_type')
         result = self.sql_search(sql)
         if (isCount == True):
-            step = Step(step_num=self.sql_steps.get_num_of_steps()+1, sql=sql, search_package=search_package, search_type=search_type)
+            step = SQL_Step(step_num=self.sql_steps.get_num_of_steps()+1, sql=sql, search_package=search_package, search_type=search_type)
             self.sql_steps.add_step(step)
         return self.format_dataset_to_dictionary(result, select_field)
 
@@ -354,7 +360,7 @@ class Database:
     def set_order_command(self, command, select_field, order_field):
         if (select_field == None or select_field == "all"):
             if (order_field == None):
-                command = command + ''' ORDER BY category ASC, name ASC'''
+                command = command + ''' ORDER BY category ASC, title ASC'''
             else:
                 command = command + ''' ORDER BY '''
                 count = 0
@@ -366,12 +372,12 @@ class Database:
                     count += 1
         else:
             if (order_field == None):
-                if ("category" in select_field and "name" in select_field):
-                    command = command + ''' ORDER BY category ASC, name ASC'''
+                if ("category" in select_field and "title" in select_field):
+                    command = command + ''' ORDER BY category ASC, title ASC'''
                 elif ("category" in select_field):
                     command = command + ''' ORDER BY category ASC'''
-                elif ("name" in select_field):
-                    command = command + ''' ORDER BY name ASC'''
+                elif ("title" in select_field):
+                    command = command + ''' ORDER BY title ASC'''
                 elif ("filepath" in select_field):
                     command = command + ''' ORDER BY filepath ASC'''
             else:
@@ -411,8 +417,8 @@ class Database:
             for data in dataset:
                 print(data)
 
-    def get_sql_step(self, step_num=None):
-        return self.sql_steps.get_step(step_num)
+    def get_sql_step(self, step_num=None, state=None):
+        return self.sql_steps.get_step(step_num=step_num, state=state)
 
     def get_sql_history(self):
         return self.sql_history
@@ -425,7 +431,6 @@ class Database:
 
     def raw_command_to_search_package(self, raw_command):
         #replace all the space to ,
-        print(raw_command)
         space_2_comma = raw_command.replace(" ", ",")
         # this is used to make the command in formatted
         space_2_comma = space_2_comma.replace("[", ",[,")
@@ -436,20 +441,17 @@ class Database:
         space_2_comma = space_2_comma.replace("'", '"')
         while '""' in space_2_comma:
             space_2_comma = space_2_comma.replace('""', '"')
-        print(space_2_comma)
 
         # may have more than one comma, replace repeat comma to single comma
         comma_2_chunks = space_2_comma
         while (",," in comma_2_chunks):
             comma_2_chunks = comma_2_chunks.replace(",,", ",")
-        print(comma_2_chunks)
 
         # make it into chunks in list
         chunks = comma_2_chunks.split(",")
         # remove all the empty string
         while ("" in chunks):
             chunks.pop(chunks.index(""))
-        print(chunks)
 
         pop_word_list = []
         temp = ""
@@ -492,7 +494,7 @@ class Database:
 
         for index in sorted(insert_index_list, reverse=True):
             chunks.insert(index, "and")
-        print(chunks)
+
         # make list of words into sublist
         format_chunks = chunks
         while ("[" in chunks and "]" in chunks):
@@ -503,7 +505,6 @@ class Database:
             for i in range (start, end+1):
                 format_chunks.pop(start)
             format_chunks.insert(start, sublist)
-        print(format_chunks)
 
         # if any "=" sign, format it to a list
         while ("=" in format_chunks):
@@ -514,7 +515,6 @@ class Database:
             for i in range (index-1, index+2):
                 format_chunks.pop(index-1)
             format_chunks.insert(index-1, sublist)
-        print(format_chunks)
 
         # format the keyword list back to single form
         add_list = []
@@ -528,7 +528,7 @@ class Database:
                     word_list = chunk[1]
                     split_chunk = []
                     for word in word_list:
-                        if (word is not "and" and word is not "or"):
+                        if (word != "and" and word != "or"):
                             sublist = [field, word]
                             split_chunk.append(sublist)
                         else:
@@ -538,12 +538,9 @@ class Database:
             index += 1
 
         for obj in reversed(add_list):
-            print(obj['split_chunk'], obj['index'])
             format_chunks.pop(obj.get('index'))
             for chunk in reversed(obj.get('split_chunk')):
                 format_chunks.insert(obj.get('index'), chunk)
-
-        print(format_chunks)
 
         # create the search_method_list
         search_line = []
@@ -567,8 +564,7 @@ class Database:
                         check_word = check_word[1:len(check_word)-1]
                     else:
                         search_method_list.append(Search_Method.RELATE)
-                    search_line.append(Search_Pair(compare_field="name",keyword=check_word))
-        print(search_method_list)
+                    search_line.append(Search_Pair(compare_field="title",keyword=check_word))
 
         return {'search_line':search_line, 'search_method_list':search_method_list}
 
