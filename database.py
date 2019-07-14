@@ -272,6 +272,7 @@ class Database:
         command = self.set_select_field_command(select_field)
         target = None
         space = " "
+        case_insensitive = "COLLATE NOCASE"
         if (len(search_line) == 0):
             # as it does not contain any keywords to search, therefore, it is going to get all the data in database
             search_type = Search_Type.SEARCH_ALL
@@ -291,7 +292,7 @@ class Database:
                             assign_string = "="
                         else:
                             assign_string = "LIKE"
-                        command = command + space + word.field + space + assign_string + space + "?"
+                        command = command + space + word.field + space + assign_string + space + "?" + space + case_insensitive
                         if (search_method_list[count] == Search_Method.EXACT):
                             target = target + ( word.keyword, )
                         else:
@@ -314,7 +315,7 @@ class Database:
                     if (word == "(" or word == ")" or word == "and" or word == "or"):
                         command = command + space + word
                     else:
-                        command = command + space + word.field + space + assign_string + space + "?"
+                        command = command + space + word.field + space + assign_string + space + "?" + space + case_insensitive
                         if (search_method == Search_Method.EXACT):
                             target = target + ( word.keyword, )
                         else:
@@ -327,12 +328,18 @@ class Database:
         return {'sql':SQL(command=command, target=target), 'search_type':search_type}
 
 
-    def get(self, raw_command, isCount):
+    def get(self, raw_command=None, isCount=None, select_field=None, order_field=None):
+        if (raw_command==None):
+            raw_command = ""
+        if (isCount == None):
+            isCount = False
         search_dict = self.raw_command_to_search_package(raw_command)
         search_line = search_dict.get('search_line')
         search_method_list = search_dict.get('search_method_list')
-        order_field = ['category', 'name']
-        select_field = "all"
+        if (order_field == None):
+            order_field = ['category', 'name']
+        if (select_field == None):
+            select_field = "all"
         search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
         sql_and_type = self.search_package_to_sql(search_package)
         sql = sql_and_type.get('sql')
@@ -404,8 +411,8 @@ class Database:
             for data in dataset:
                 print(data)
 
-    def get_sql_step(self, step_num=None, state=None):
-        return self.sql_steps.get_step(step_num, state)
+    def get_sql_step(self, step_num=None):
+        return self.sql_steps.get_step(step_num)
 
     def get_sql_history(self):
         return self.sql_history
@@ -426,8 +433,9 @@ class Database:
         space_2_comma = space_2_comma.replace("=", ",=,")
         space_2_comma = space_2_comma.replace("(", ",(,")
         space_2_comma = space_2_comma.replace(")", ",),")
-        space_2_comma = space_2_comma.replace('""', '"')
-        space_2_comma = space_2_comma.replace("''", "'")
+        space_2_comma = space_2_comma.replace("'", '"')
+        while '""' in space_2_comma:
+            space_2_comma = space_2_comma.replace('""', '"')
         print(space_2_comma)
 
         # may have more than one comma, replace repeat comma to single comma
@@ -435,13 +443,43 @@ class Database:
         while (",," in comma_2_chunks):
             comma_2_chunks = comma_2_chunks.replace(",,", ",")
         print(comma_2_chunks)
+
         # make it into chunks in list
         chunks = comma_2_chunks.split(",")
         # remove all the empty string
         while ("" in chunks):
             chunks.pop(chunks.index(""))
         print(chunks)
-        #print(chunks)
+
+        pop_word_list = []
+        temp = ""
+        start_word_index, end_word_index = 0, 0
+        isExactWord = False
+        for i in range(0, len(chunks)):
+            word = chunks[i]
+            if (word[0] == '"' and word[-1] != '"'):
+                isExactWord = True
+                start_word_index = i
+
+            if (word[0] != '"' and word[-1] == '"'):
+                temp = temp + " " + word
+                isExactWord = False
+                end_word_index = i
+                pop_word_list.append({'start':start_word_index, 'end':end_word_index, 'word':temp.strip()})
+                temp = ""
+
+            if (isExactWord == True):
+                temp = temp + " " +word
+
+        for obj in reversed(pop_word_list):
+            start_word_index = obj['start']
+            end_word_index = obj['end']
+            for i in range(end_word_index,start_word_index-1, -1):
+                chunks.pop(i)
+            chunks.insert(start_word_index, obj['word'])
+
+
+        # insert "and" to word and words
         insert_index_list = []
         for i in range(0, len(chunks)-1):
             if (chunks[i] == "(" or chunks[i] == "=" or chunks[i] == "or" or chunks[i] == "and" or chunks[i] == "["):
@@ -516,10 +554,7 @@ class Database:
             else:
                 if (type(word) is list):
                     check_word = word[1]
-                    if (check_word[0] == "'" and check_word[-1] == "'"):
-                        search_method_list.append(Search_Method.EXACT)
-                        check_word = check_word[1:len(check_word)-1]
-                    elif(check_word[0] == '"' and check_word[-1] == '"'):
+                    if (check_word[0] == '"' and check_word[-1] == '"'):
                         search_method_list.append(Search_Method.EXACT)
                         check_word = check_word[1:len(check_word)-1]
                     else:
@@ -527,10 +562,7 @@ class Database:
                     search_line.append(Search_Pair(compare_field=word[0], keyword=check_word))
                 else:
                     check_word = word
-                    if (check_word[0] == "'" and check_word[-1] == "'"):
-                        search_method_list.append(Search_Method.EXACT)
-                        check_word = check_word[1:len(check_word)-1]
-                    elif(check_word[0] == '"' and check_word[-1] == '"'):
+                    if (check_word[0] == '"' and check_word[-1] == '"'):
                         search_method_list.append(Search_Method.EXACT)
                         check_word = check_word[1:len(check_word)-1]
                     else:
@@ -548,40 +580,6 @@ class Database:
     def __del__(self):
         print("Disconnected to the database")
 
-    # search is the method it used to search
-    # isCount is whether it needs to count a step
-    # keyword should be a list to saves the word you need to search
-    # method is the way it used to do sorting, union or intersection
-    # select_field is the field you want the database to return
-    # compare field is the field you want the database to compare your keyword to which column
-    # order field is the field you want to sort
-'''
-    def get(self, search, isCount, search_package):
-        if (search == "all"):
-            result = self.get_all_data(select_field=search_package.select_field, order_field=search_package.order_field)
-            if (isCount == True):
-                step = SQL_Step(step_type="Search all", step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), search_package=search_package)
-                self.sql_steps.add_step(step)
-            return self.format_dataset_to_dictionary(result.get('data'), select_field=search_package.select_field)
-        elif (search == "relate" or search == "exact"):
-            result = self.get_exact_or_relate(search_pair_list=search_package.search_pair_list, search_method_list=search_package.search_method_list, select_field=search_package.select_field, order_field=search_package.order_field)
-            if (isCount == True):
-                if (search == "relate"):
-                    step_type = "Search related keyword"
-                elif (search == "exact"):
-                    step_type = "Search exact keyword"
-                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), search_package=search_package)
-                self.sql_steps.add_step(step)
-            return self.format_dataset_to_dictionary(result.get('data'), select_field=search_package.select_field)
-        elif (search == "filter"):
-            result = self.get_filter(search_pair_list=search_package.search_pair_list, logic_list=search_package.logic_list, select_field=search_package.select_field, order_field=search_package.order_field)
-            if (isCount == True):
-                step_type = "Filter"
-                step = SQL_Step(step_type=step_type, step_num=self.sql_steps.get_num_of_steps() + 1, sql=result.get('sql'), search_package=search_package)
-                self.sql_steps.add_step(step)
-            return self.format_dataset_to_dictionary(result.get('data'), select_field=select_field)
-
-'''
 
     # this is used to format all the searching input command into
     # => keyword, compare_field, logic, searching rules, order, etc...
@@ -589,93 +587,12 @@ class Database:
 '''
     Situations:
 
-    "-keywords" : do not contain this word
-    "3...8" : range from 3 to 8
-    " "keywords" " : exact keyword
-    " word1 word2 " : contains word1 and word2
-    " word1 or word2" : contains word1 or word2
+    ** not yet "-keywords" : do not contain this word
+    ** not yet "3...8" : range from 3 to 8
 
-    1. Enter: "solar"
-        keyword = ['solar']
-        compare_field = ['name']
-        order_field = ['category', 'name']
-        logic_field = []
-
-    2. Enter: "solar wind" , "solar, wind" , "[solar, wind]"
-        keyword = ['solar', 'wind']
-        compare_field = ['name', 'name']
-        order_field = ['category', 'name']
-        search = [LIKE %word%, LIKE %word%]
-        logic_field = [and]
-
-    3. Enter: "solar, filename=wind"
-        keyword = ['solar', 'wind']
-        compare_field = ['name', 'filename']
-        order_field = ['category', 'name']
-        search = [LIKE %word%, LIKE %word%]
-        logic_field = [and]
-
-    4. Enter: "name=solar or filename=[solar, proposal_1]"
-        keyword = ['solar', 'solar', 'proposal_1']
-        compare_field =['name', 'filename', 'filename']
-        order_field = ['category', 'name']
-
+    done  " "keywords" " : exact keyword
+    done  " word0 word2 " : contains word1 and word2
+    done  " word1 and word2"
+    done  " word1 or word2" : contains word1 or word2
+    done " (word1 or word2) and word3 "
 '''
-
-import random
-
-database = Database()
-
-creators = ['Eddy', 'Ken', 'Alan']
-
-database.add_category("renewable energy")
-database.add_category("smart device")
-database.add_category("indoor air quality")
-database.add_category("hydroelectric")
-database.add_category("secret")
-database.add_category("Lithium battery")
-database.add_category("vehicle")
-database.add_category("energy efficiency")
-
-file_sep = "\\"
-
-database.add(name="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(name="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(name="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(name="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-
-for i in range(1, 10):
-    database.add(name=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-
-database.add(name="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
-database.add(name="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
-database.add(name="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
-
-
-search = 'solar "panel"( (filepath=[solar_panel_proposal, solar_panel_proposal_6c) or creator=eddy)'
-
-result = database.get(search, isCount=False)
-for obj in result:
-    print(obj)
-
-
-#search_dict = database.translate_search_command(search)
-#search_line = search_dict.get('search_line')
-#search_method_list = search_dict.get('search_method_list')
-#order_field = ['category', 'name']
-#select_field = "all"
-#
-#search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
-#database.transform_to_sql(search_line=search_package.search_line, search_method_list=search_package.search_method_list, select_field=search_package.select_field, order_field=search_package.order_field)
-
-#search_pair_list = [Search_Pair('solar', 'name'),Search_Pair('panel', 'name'),Search_Pair('2014-03-28', 'create_date'),Search_Pair('Eddy', '#creator')]
-#search_method_list = [Search_Method.RELATE, Search_Method.RELATE, Search_Method.RELATE, Search_Method.RELATE]
-#logic_list = ['(','(','and',')','or',')','or']
-#select_field = "all"
-#order_field = None
-#
-#search_package = Search_Package(search_pair_list, search_method_list, logic_list, select_field, order_field)
-#
-#database.transform_to_sql(search_pair_list, search_method_list, logic_list, select_field, order_field)

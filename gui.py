@@ -322,19 +322,8 @@ class Page(Root):
         self.search_entry.grid(row=4, column=2, sticky="W")
 
         # search button
-        self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=lambda: self.search(self.search_method_id.get(), self.search_entry_id.get()))
+        self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=lambda: self.search(self.search_entry_id.get()))
         self.search_button.grid(row=4, column=3)
-
-        # search method radiobutton
-        # search_method_id is the var saves the radio button value
-        self.search_method_id = tk.StringVar()
-        self.search_method_id.set("relate")
-        # relate radio button
-        self.relate_radiobutton = tk.Radiobutton(self.search_title, text="Related", variable=self.search_method_id, value="relate")
-        self.relate_radiobutton.grid(row=4, column=4, sticky="W")
-        # exact radio button
-        self.exact_radiobutton = tk.Radiobutton(self.search_title, text="Exact", variable=self.search_method_id, value="exact")
-        self.exact_radiobutton.grid(row=4, column=5, sticky="W")
 
         # add button
         self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
@@ -440,7 +429,7 @@ class Page(Root):
         self.step_listbox.insert("end", f"Non-Procedural Search")
 
         # show all the current files inside database
-        self.show_table(database.get(search="all", isCount=True))
+        self.show_table(database.get())
         # adding the first step of showing all the current files inside database
         self.add_step()
 
@@ -490,7 +479,7 @@ class Page(Root):
 
         current_listbox = tk.Listbox(right_frame, selectmode="extended", width=self.GUI.modify_listbox_width, height=25)
         current_listbox.grid(row=2, column=3, rowspan=25)
-        for data in database.get(search="all", isCount=False, select_field=['filepath']):
+        for data in database.get(isCount=False, select_field=['filepath']):
             self.current_filepath_list.append(data.get('filepath'))
             current_listbox.insert("end", f"{database.extract_filename(data.get('filepath'))}")
 
@@ -570,7 +559,7 @@ class Page(Root):
         selected_index = listbox.index(listbox.curselection())
         # get the selecting item in current database listbox
         current_path = self.current_filepath_list[selected_index]
-        data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
+        data = database.get(isCount=False,raw_command=f"filepath='{current_path}'")
         # ensure the file got a file, otherwise report error
         try:
             data = data[0]
@@ -658,7 +647,7 @@ class Page(Root):
             current_listbox.selection_set( start, "end")
 
             # update treeview after you removing something in database
-            self.show_table(database.get(search="all", isCount=False))
+            self.show_table(database.get())
 
 
 
@@ -676,7 +665,7 @@ class Page(Root):
             selected_filename = current_listbox.get(selected_item)
             remove_path_index_list.append(current_listbox.index(selected_item))
             current_path = self.current_filepath_list[current_listbox.index(selected_item)]
-            data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
+            data = database.get(raw_command=f"filepath='{current_path}'")
 
             # ensure the file got a file, otherwise report error
             try:
@@ -751,7 +740,7 @@ class Page(Root):
             self.temporary_obj_list.pop(index)
 
         # update treeview after you removing something in database
-        self.show_table(database.get(search="all", isCount=False))
+        self.show_table(database.get())
 
 
 
@@ -775,7 +764,7 @@ class Page(Root):
             # have difference, needs to update the database
             # obj_id is the original filepath, it may want to change the filepath
             database.update_data(original_filepath=data_package.data.get('obj_id'), **data_package.new_data.get())
-            self.show_table(database.get(search="all", isCount=False))
+            self.show_table(database.get())
 
 
     def click_treeview_item(self, event):
@@ -811,7 +800,7 @@ class Page(Root):
         create_date_title.grid(row=7, column=0, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
 
         selected_item_filepath = self.treeview.selection()[0]
-        data = database.get(search="exact",isCount=False, keyword=[selected_item_filepath], select_field="all", compare_field=["filepath"])[0]
+        data = database.get(raw_command=f"filepath='{selected_item_filepath}'")[0]
         # name data
         name_id = tk.StringVar()
         name_id.set(data.get('name'))
@@ -881,8 +870,21 @@ class Page(Root):
         for button in self.checkbuttons:
             if (button.value_id.get() == 1):
                 filterList.append(button.category)
+        field = "category"
+        raw_command = ""
+        logic = ""
+        if (filtertype == "union"):
+            logic = "or"
+        elif (filtertype == "intersect"):
+            logic = "and"
+        count = 0
+        for category in filterList:
+            raw_command = raw_command + field + "="+ category
+            if (count < len(filterList)-1):
+                raw_command = raw_command + " " + logic + " "
+            count += 1
         # keyword => list
-        self.show_table(database.get(search="filter", isCount=True, keyword=filterList, method=filtertype))
+        self.show_table(database.get(raw_command=raw_command, isCount=True))
         self.add_step()
 
 
@@ -902,8 +904,8 @@ class Page(Root):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column, fontsize=fontsize))
 
 
-    def search(self, search_method, keyword):
-        self.show_table(database.get(search=search_method, isCount=True, keyword=[keyword]))
+    def search(self, raw_command):
+        self.show_table(database.get(raw_command=raw_command, isCount=True))
         self.add_step()
 
 
@@ -958,10 +960,3 @@ if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()
 else:
     print("Sorry. The application does not support %s yet." % get_platform())
-
-command = '''SELECT * FROM files_table WHERE name LIKE "%solar%" COLLATE NOCASE and name LIKE "%panel%" COLLATE NOCASE and name LIKE "%D%" COLLATE NOCASE'''
-
-sql = db.SQL(command, None)
-
-for obj in database.sql_search(sql)['data']:
-    print(obj)
