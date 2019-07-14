@@ -861,20 +861,22 @@ class Page(Root):
             if (button.value_id.get() == 1):
                 filterList.append(button.category)
         field = "category"
-        raw_command = ""
-        logic = ""
         if (filtertype == "union"):
             logic = "or"
         elif (filtertype == "intersect"):
             logic = "and"
         count = 0
+        search_line = []
+        search_method_list = []
         for category in filterList:
-            raw_command = raw_command + field + "="+ category
+            search_line.append(db.Search_Pair(keyword=category, compare_field=field))
+            search_method_list.append(db.Search_Method.RELATE)
             if (count < len(filterList)-1):
-                raw_command = raw_command + " " + logic + " "
+                search_line.append(logic)
             count += 1
+        search_package = db.Search_Package(search_line=search_line, search_method_list=search_method_list, select_field="all",order_field=None)
         # keyword => list
-        self.show_table(database.get(raw_command=raw_command, isCount=True))
+        self.show_table(database.get(search_package=search_package, isCount=True))
         self.add_step()
 
 

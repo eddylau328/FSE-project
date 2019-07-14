@@ -337,22 +337,25 @@ class Database:
         print(target)
         return {'sql':SQL(command=command, target=target), 'search_type':search_type}
 
-
-    def get(self, raw_command=None, isCount=None, select_field=None, order_field=None):
-        if (raw_command==None):
-            raw_command = ""
-        if (isCount == None):
-            isCount = False
-        search_dict = self.raw_command_to_search_package(raw_command)
-        search_line = search_dict.get('search_line')
-        search_method_list = search_dict.get('search_method_list')
-        search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
-        sql_and_type = self.search_package_to_sql(search_package)
+    # search_package could be provided, instead of raw_command
+    def get(self, raw_command=None, isCount=None, select_field=None, order_field=None, search_package=None):
+        if (search_package == None):
+            if (raw_command==None):
+                raw_command = ""
+            if (isCount == None):
+                isCount = False
+            search_dict = self.raw_command_to_search_package(raw_command)
+            search_line = search_dict.get('search_line')
+            search_method_list = search_dict.get('search_method_list')
+            new_search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
+        else:
+            new_search_package = search_package
+        sql_and_type = self.search_package_to_sql(new_search_package)
         sql = sql_and_type.get('sql')
         search_type = sql_and_type.get('search_type')
         result = self.sql_search(sql)
         if (isCount == True):
-            step = SQL_Step(step_num=self.sql_steps.get_num_of_steps()+1, sql=sql, search_package=search_package, search_type=search_type)
+            step = SQL_Step(step_num=self.sql_steps.get_num_of_steps()+1, sql=sql, search_package=new_search_package, search_type=search_type)
             self.sql_steps.add_step(step)
         return self.format_dataset_to_dictionary(result, select_field)
 
