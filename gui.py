@@ -571,8 +571,6 @@ class Page(Root):
         # get the selecting item in current database listbox
         current_path = self.current_filepath_list[selected_index]
         data = database.get(search="exact", isCount=False, keyword=[current_path], select_field="all", compare_field=['filepath'])
-        print("THIS IS TEST")
-        print(data)
         # ensure the file got a file, otherwise report error
         try:
             data = data[0]
@@ -952,7 +950,7 @@ database.add(name="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_prop
 for i in range(1, 10):
     database.add(name=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-database.add(name="Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
+database.add(name="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
 database.add(name="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
 database.add(name="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
 
@@ -961,8 +959,9 @@ if (get_platform() == "Windows" or get_platform() == "OS X"):
 else:
     print("Sorry. The application does not support %s yet." % get_platform())
 
-command = '''SELECT * FROM files_table WHERE name LIKE solar COLLATE NOCASE and name LIKE panel COLLATE NOCASE and name LIKE D COLLATE NOCASE'''
+command = '''SELECT * FROM files_table WHERE name LIKE "%solar%" COLLATE NOCASE and name LIKE "%panel%" COLLATE NOCASE and name LIKE "%D%" COLLATE NOCASE'''
 
-sql = SQL(command, None)
+sql = db.SQL(command, None)
 
-database.sql_search(sql)
+for obj in database.sql_search(sql)['data']:
+    print(obj)
