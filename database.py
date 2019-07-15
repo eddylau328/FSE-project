@@ -195,6 +195,7 @@ class Database:
             files_table (
                 title text,
                 filepath text,
+                filename text,
                 category text,
                 creator text,
                 description text,
@@ -209,7 +210,7 @@ class Database:
         # description - descripes what the file is
         # Create date - saves the created date of the object
         # Last Modify - saves the latest update time and date
-        self.ALL_FIELDS = ("title", "filepath", "category", "creator", "description", "create_date", "last_modify")
+        self.ALL_FIELDS = ("title", "filepath", "filename","category", "creator", "description", "create_date", "last_modify")
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
@@ -235,15 +236,15 @@ class Database:
     # adding files detail to the files_table in the database
     def add(self, **kwargs):
         current_time = DateTime().get_current_time()
-        command = '''INSERT INTO files_table (title, filepath, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?)'''
-        file_obj = (kwargs.get('title', None), kwargs.get('filepath', None), kwargs.get('category', None), kwargs.get('creator', ""), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
+        command = '''INSERT INTO files_table (title, filepath, filename, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?,?)'''
+        file_obj = (kwargs.get('title', None), kwargs.get('filepath', None), kwargs.get('filename', None), kwargs.get('category', None), kwargs.get('creator', ""), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
         sql = SQL(command=command, target=file_obj)
         self.sql_action(sql)
 
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
-        command = '''UPDATE files_table SET title = ?, filepath = ?, category = ?, description = ?, last_modify = ? WHERE filepath =?'''
-        target = (kwargs.get('title'), kwargs.get('filepath'), kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
+        command = '''UPDATE files_table SET title = ?, filepath = ?, filename = ?,category = ?, description = ?, last_modify = ? WHERE filepath =?'''
+        target = (kwargs.get('title'), kwargs.get('filepath'), kwargs.get('filename'),kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
         sql = SQL(command=command, target=target)
 
         self.sql_action(sql)

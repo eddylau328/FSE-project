@@ -35,7 +35,6 @@ class GUI:
             self.main_frame_outside_pady = 20
             self.main_frame_inline_padx = 5
             self.main_frame_inline_pady = 5
-            self.main_frame_font = ('Arial', 12)
 
         elif (os_platform == "Windows"):
 
@@ -58,6 +57,12 @@ class GUI:
             self.treeview_popup_labelframe_padx = 10
             self.treeview_popup_labelframe_pady = 10
             self.treeview_popup_data_wraplength = 182
+
+            # main frame settings constant
+            self.main_frame_outside_padx = 5
+            self.main_frame_outside_pady = 20
+            self.main_frame_inline_padx = 5
+            self.main_frame_inline_pady = 5
 
 
 def get_platform():
@@ -832,7 +837,7 @@ class Page(Root):
         category.grid(row=2, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # filename data
         filename_id = tk.StringVar()
-        filename_id.set(database.extract_filename(data.get('filepath'),filetype=False))
+        filename_id.set(data.get('filename'))
         filename = tk.Label(labelframe, textvariable=filename_id, font=self.GUI.treeview_popup_font,wraplength=self.GUI.treeview_popup_data_wraplength, justify="left")
         filename.grid(row=3, column=1, sticky="WN", padx=self.GUI.treeview_popup_padx, pady=self.GUI.treeview_popup_pady)
         # filepath data
@@ -929,7 +934,7 @@ class Page(Root):
         count = 1
         for data in dataset:
             # treeview.insert(parent id, index, iid, values)
-            self.treeview.insert("", "end", f"{data.get('filepath')}" , values=(data.get('title'), database.extract_filename(data.get('filepath')), data.get('creator'), data.get('last_modify'), data.get('category')))
+            self.treeview.insert("", "end", f"{data.get('filepath')}" , values=(data.get('title'), data.get('filename'), data.get('creator'), data.get('last_modify'), data.get('category')))
             count += 1
         pass
 
@@ -957,19 +962,19 @@ if (get_platform() == "OS X"):
 elif (get_platform() == "Windows"):
     file_sep = "\\"
 
-database.add(title="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_4a.txt", filetype=True), category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_5b.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
+database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_6c.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
+database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_1d.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_2e.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_3f.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
-    database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+    database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", filename=database.extract_filename(f"files{file_sep}solar_panel_proposal_{i}.txt", filetype=True), category="renewable energy", creator=creators[random.randint(0, 2)])
 
-database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
-database.add(title="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
-database.add(title="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
+database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", filename=database.extract_filename("files"+file_sep+"smart_lighting.pdf", filetype=True), category="smart device")
+database.add(title="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", filename=database.extract_filename("files"+file_sep+"indoor_air_quality_device.pdf", filetype=True), category="smart device,indoor air quality")
+database.add(title="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", filename=database.extract_filename("files"+file_sep+"air_filter_device.pdf", filetype=True), category="indoor air quality")
 
 if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()
