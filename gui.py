@@ -30,6 +30,13 @@ class GUI:
             self.treeview_popup_labelframe_pady = 10
             self.treeview_popup_data_wraplength = 260
 
+            # main frame settings constant
+            self.main_frame_outside_padx = 5
+            self.main_frame_outside_pady = 20
+            self.main_frame_inline_padx = 5
+            self.main_frame_inline_pady = 5
+            self.main_frame_font = ('Arial', 12)
+
         elif (os_platform == "Windows"):
 
             self.filter_checkbutton_fontsize = 9
@@ -284,6 +291,8 @@ class Checkbutton:
         self.checkbutton = tk.Checkbutton(root, text=name, variable=self.value_id, font=('Arial', fontsize))
         self.checkbutton.grid(row=row, column=column, sticky="W")
 
+    def set(self, value):
+        self.value_id.set(value)
 
 class Page(Root):
     def __init__(self):
@@ -291,39 +300,32 @@ class Page(Root):
         # check what os system the user is using
         self.GUI = GUI(get_platform())
 
-        self.root.grid_rowconfigure(0, minsize=30)
-        self.root.grid_columnconfigure(0, minsize=20)
         # Heading
         self.heading = tk.Label(self.root, text="Files Search Engine", font=('Arial', 32), height=1)
-        self.heading.grid(row=1, column=1, columnspan=10, sticky="W")
-        # skip the line for some spaces
-        self.root.grid_rowconfigure(2, minsize=10)
+        self.heading.grid(row=1, column=1, columnspan=10, sticky="W",padx=self.GUI.main_frame_outside_padx, pady=self.GUI.main_frame_outside_pady)
 
         # search title
         self.search_title = tk.LabelFrame(self.root, text="Search", font=('Arial', 16), height=2)
-        self.search_title.grid(row=3, column=1, sticky="W")
+        self.search_title.grid(row=3, column=1, sticky="W", padx=self.GUI.main_frame_outside_padx)
         # search label
         self.search_label = tk.Label(self.search_title, text="Keyword :", font=('Arial', 14))
-        self.search_label.grid(row=4, column=1, sticky="W")
+        self.search_label.grid(row=4, column=1, sticky="W", padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
         # search
         # search_entry_id is the var saves the input string from search_entry
         self.search_entry_id = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14))
-        self.search_entry.grid(row=4, column=2, sticky="W")
+        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14), width=64)
+        self.search_entry.grid(row=4, column=2, sticky="W", padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
 
         # search button
         self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=lambda: self.search(self.search_entry_id.get()))
-        self.search_button.grid(row=4, column=3)
+        self.search_button.grid(row=4, column=3, sticky="W", pady=self.GUI.main_frame_inline_pady)
 
         # add button
         self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
-        self.add_button.grid(row=4, column=6, sticky="W")
-
-        # skip the line for some spaces
-        self.search_title.grid_rowconfigure(5, minsize=10)
+        self.add_button.grid(row=4, column=12, sticky="W", padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
 
         self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial', 16))
-        self.result_title.grid(row=6, column=1, rowspan=100, columnspan=10)
+        self.result_title.grid(row=5, column=1, rowspan=100, columnspan=10, padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
         # table
         self.treeview = ttk.Treeview(self.result_title, height=28, selectmode="browse")
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
@@ -350,21 +352,22 @@ class Page(Root):
         self.treeview.config(yscrollcommand=self.treeview_vertical_scrollbar.set)
         self.treeview_vertical_scrollbar.pack(side="right", fill=tk.Y)
 
-        # skip some x-dir spaces for the treeview and the filter
-        self.search_title.grid_columnconfigure(12, minsize=5)
-
         # filter labelframe
-        row = 6
+        row = 10
         self.filter_title = tk.LabelFrame(self.search_title, text="Filter", font=('Arial', 16))
-        self.filter_title.grid(row=row, column=13, rowspan=100, sticky="W")
+        self.filter_title.grid(row=row, column=12, rowspan=100, sticky="W", padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
         # checkbuttons for the database to sort in category
         self.checkbuttons = []
         row = 0
         column = 0
         for category in database.get_category():
+            if (row == 6):
+                column += 1
+                row = 0
             self.add_checkbutton(self.filter_title, category[0], row=row, column=column, fontsize=self.GUI.filter_checkbutton_fontsize)
             row += 1
 
+        row, column = 7, 0
         self.filter_radiobutton_id = tk.StringVar()
         self.filter_radiobutton_id.set("union")
         # union filter radiobutton
@@ -384,16 +387,13 @@ class Page(Root):
         self.filter_select_disable_button = tk.Button(self.filter_title, textvariable=self.filter_select_disable_id, font=('Arial', 12), command=self.filter_checkbox_select_disable_all, width=10)
         self.filter_select_disable_button.grid(row=row, column=column + 1, sticky="W")
 
-        # skip some x-dir space
-        self.search_title.grid_columnconfigure(14, minsize=5)
-
         # tab control for changing the page
-        self.minor_tab_control = ttk.Notebook(self.search_title, width=160, height=400)
+        self.minor_tab_control = ttk.Notebook(self.search_title, width=400, height=250)
         self.step_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.step_tab, text="Steps")
         self.history_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.history_tab, text="History")
-        self.minor_tab_control.grid(row=7, column=15)
+        self.minor_tab_control.grid(row=9, column=12, padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
 
         # procedure search checkbutton value
         self.step_procedure_search_id = tk.IntVar()
@@ -401,7 +401,7 @@ class Page(Root):
         # used to save the steps the user took
         self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
         # new search step
-        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox))
+        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons))
         self.step_new_button.pack(side="bottom", fill=tk.X)
         # procedure search checkbutton
         self.step_procedure_search_checkbutton = tk.Checkbutton(self.step_tab, text="Procedure Search", variable=self.step_procedure_search_id, font=('Arial', 12))
@@ -439,7 +439,7 @@ class Page(Root):
 
 
     # this is the event when the user click the new search button
-    def click_new_search(self, step_procedure_search_id, step_listbox):
+    def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons):
         value = step_procedure_search_id.get()
         if (value == 1):
             is_procedure_search = True
@@ -453,6 +453,9 @@ class Page(Root):
         step_listbox.insert("end", listbox_title)
         self.show_table(database.get(isCount=True))
         self.add_step()
+        # all filter button is reset to original
+        for button in checkbuttons:
+            button.set(1)
 
 
     def create_window(self, w, h):
@@ -866,12 +869,13 @@ class Page(Root):
     def click_step_listbox_item(self, event):
         # receive the index which the user select, it is tuple
         index = self.step_listbox.curselection()[0]
-        # index is equal to the step num
-        step = database.get_sql_step(step_num=index)
-        # unorganised format
-        result = database.get(isCount=False, search_package=step.search_package)
-        self.show_table(result)
-
+        if (index != 0):
+            # index is equal to the step num
+            # there is no step zero
+            step = database.get_sql_step(step_num=index)
+            # use the step.sql to get back the data you search before
+            result = database.get(isCount=False, sql=step.sql)
+            self.show_table(result)
 
     # filter out different category
     def filter(self, filtertype):
