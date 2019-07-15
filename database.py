@@ -467,8 +467,18 @@ class Database:
     def get_sql_step(self, step_num=None, state=None):
         return self.sql_solution.get_step(step_num=step_num, state=state)
 
-    def get_sql_history(self):
-        return self.sql_history
+    def get_sql_history(self, **kwargs):
+        try:
+            if ('get_index' in kwargs):
+                return len(self.sql_history)-1
+            elif ('step_num' in kwargs and 'step_index' in kwargs):
+                step_index = kwargs.get('step_index')
+                step_num = kwargs.get('step_num')
+                return self.sql_history[step_index].get_step(step_num)
+            else:
+                return self.sql_history[-1]
+        except:
+            return None
 
     def extract_filename(self, path, **kwargs):
         if (kwargs.get('filetype', True) == True):

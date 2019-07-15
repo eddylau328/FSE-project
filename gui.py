@@ -403,6 +403,25 @@ class Page(Root):
         self.minor_tab_control.add(self.history_tab, text="History")
         self.minor_tab_control.grid(row=9, column=12, padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
 
+        # history
+        # it saves the step num, index in the history_listbox, and the corresponding steps it refer to
+        self.history_steps_list = []
+        self.history_listbox = tk.Listbox(self.history_tab, selectmode="single")
+        # clear all history steps
+        self.history_clear_button = tk.Button(self.history_tab, text="Clear History", command=None)
+        self.history_clear_button.pack(side="bottom", fill=tk.X)
+        # pack the history listbox at last
+        self.history_listbox.pack(side="left", fill=tk.BOTH, expand=1)
+
+        # history_scrollbar
+        self.history_scrollbar = ttk.Scrollbar(self.history_tab, orient="vertical")
+        self.history_scrollbar.config(command=self.history_listbox.yview)
+        self.history_listbox.config(yscrollcommand=self.history_scrollbar.set)
+        self.history_scrollbar.pack(side="right", fill=tk.Y)
+
+        # add clicking event in step_listbox
+        self.history_listbox.bind('<Double-1>', self.click_history_listbox_item)
+
         # procedure search checkbutton value
         self.step_procedure_search_id = tk.IntVar()
         self.step_procedure_search_id.set(0)
@@ -424,16 +443,11 @@ class Page(Root):
 
         # add clicking event in step_listbox
         self.step_listbox.bind('<Double-1>', self.click_step_listbox_item)
-        # show that it is non-procedural search at the starting
-        self.step_listbox.insert("end", f"Non-Procedural Search")
 
         # this is start at the beginning of the program
-        database.create_new_search(is_procedure_search=False)
-
         # show all the current files inside database
-        self.show_table(database.get(isCount=True))
         # adding the first step of showing all the current files inside database
-        self.add_step()
+        self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons, self.search_entry_id)
 
         # use to save the temporary objects
         self.temporary_obj_list = []
@@ -446,8 +460,37 @@ class Page(Root):
         self.root.mainloop()
 
 
+    def click_history_listbox_item(self,event):
+        click_index = self.history_listbox.curselection()[0]
+        for step_data in self.history_steps_list:
+            # first ensure that the user click the history step but not the titles
+            if (click_index == step_data.get('index')):
+                step_index = step_data.get('step_index')
+                step_num = step_data.get('step_num')
+                step = database.get_sql_history(step_index=step_index, step_num=step_num)
+                self.show_table(database.get(isCount=False, sql=step.sql))
+
+    def update_history(self):
+        if (database.get_sql_history() != None):
+            sql_solution = database.get_sql_history()
+            # add the title first
+            if (sql_solution.procedure_search):
+                self.history_listbox.insert("end", "--------------------------------------")
+                self.history_listbox.insert("end", "Procedural Search")
+            else:
+                self.history_listbox.insert("end", "--------------------------------------")
+                self.history_listbox.insert("end","Non-Procedural Search")
+            # loop through the sql_solution
+            for step in sql_solution.steps:
+                # append the current
+                self.history_steps_list.append({'index':self.history_listbox.index("end"), 'step_index':database.get_sql_history(get_index=True), 'step_num':step.step_num})
+                self.history_listbox.insert("end", f"{step.step_num}. {step.step_type}")
+            self.history_listbox.select_set(tk.END)
+        print(self.history_steps_list)
+
     # this is the event when the user click the new search button
     def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons, search_entry_id):
+        self.step_new_button.config(activeforeground='blue')
         value = step_procedure_search_id.get()
         if (value == 1):
             is_procedure_search = True
@@ -459,6 +502,8 @@ class Page(Root):
         database.create_new_search(is_procedure_search=is_procedure_search)
         step_listbox.delete(0, "end")
         step_listbox.insert("end", listbox_title)
+        self.update_history()
+
         self.show_table(database.get(isCount=True))
         self.add_step()
         # all filter button is reset to original
