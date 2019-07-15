@@ -160,6 +160,10 @@ class SQL_Step:
             self.step_type = "Search Exact"
         elif (search_type == Search_Type.SEARCH_MIX):
             self.step_type = "Mix Search"
+        elif (search_type == Search_Type.FILTER_RELATE):
+            self.step_type = "Filter Relate"
+        elif (search_type == Search_Type.FILTER_EXACT):
+            self.step_type = "Filter Exact"
         self.search_package = search_package
 
 class Search_Type(Enum):
@@ -167,6 +171,8 @@ class Search_Type(Enum):
     SEARCH_RELATE = 2
     SEARCH_EXACT = 3
     SEARCH_MIX = 4
+    FILTER_RELATE = 5
+    FILTER_EXACT = 6
 
 class Search_Method(Enum):
     EXACT = 1
@@ -243,8 +249,8 @@ class Database:
 
     def update_data(self, original_filepath, **kwargs):
         # get the id of the orginal data from the database
-        command = '''UPDATE files_table SET title = ?, filepath = ?, filename = ?,category = ?, description = ?, last_modify = ? WHERE filepath =?'''
-        target = (kwargs.get('title'), kwargs.get('filepath'), kwargs.get('filename'),kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
+        command = '''UPDATE files_table SET title = ?, creator = ?, filepath = ?, filename = ?,category = ?, description = ?, last_modify = ? WHERE filepath =?'''
+        target = (kwargs.get('title'), kwargs.get('creator'),kwargs.get('filepath'), kwargs.get('filename'),kwargs.get('category'), kwargs.get('description'), DateTime().get_current_time(), kwargs.get('filepath'))
         sql = SQL(command=command, target=target)
 
         self.sql_action(sql)
@@ -349,7 +355,26 @@ class Database:
                     # the current searching is related search
                     search_type = Search_Type.SEARCH_RELATE
                     search_method = Search_Method.RELATE
+                    # check whether it is filter or not
+                    isFilter = True
+                    for word in search_line:
+                        if (word != "(" and word != ")" and word != "and" and word != "or"):
+                            if (word.field != "category"):
+                                isFilter = False
+                                break
+                    if (isFilter):
+                        isRelate = True
+                        for word in search_line:
+                            if (word == "and"):
+                                isRelate = False
+                                break
+                    if (isFilter == True):
+                        if (isRelate == True):
+                            search_type = Search_Type.FILTER_RELATE
+                        else:
+                            search_type = Search_Type.FILTER_EXACT
                     assign_string = "LIKE"
+
                 if (sql_solution.procedure_search == True):
                     if (previous_sql != None):
                         target = previous_sql.target
@@ -466,6 +491,9 @@ class Database:
 
     def get_sql_step(self, step_num=None, state=None):
         return self.sql_solution.get_step(step_num=step_num, state=state)
+
+    def clear_sql_history(self):
+        self.sql_history = []
 
     def get_sql_history(self, **kwargs):
         try:

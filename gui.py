@@ -15,8 +15,8 @@ class GUI:
             # Modify FILES POPUP WINDOW CONSTANT
             self.modify_listbox_width = 28
             self.modify_width = 900
-            self.modify_height = 500
-            self.modify_leftframe_wraplength = 200
+            self.modify_height = 550
+            self.modify_leftframe_wraplength = 165
             self.modify_leftframe_width = 30
             self.modify_leftframe_font = ('Arial', 12)
 
@@ -99,14 +99,14 @@ class Show_Data_Package:
         # creator label
         self.creator_id = tk.StringVar()
         self.creator_id.set("")
-        self.creator_label = tk.Label(frame, textvariable=self.creator_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_width, justify="left", width=0)
+        self.creator_label = tk.Entry(frame, textvariable=self.creator_id, font=self.GUI.modify_leftframe_font, width=self.GUI.modify_leftframe_width)
 
         # category title label
         self.category_title = tk.Label(frame, text="Category :", font=self.GUI.modify_leftframe_font)
         # category entry id
         self.category_id = tk.StringVar()
         self.category_id.set("")
-        self.category_label = tk.Label(frame, textvariable=self.category_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.category_label = tk.Button(frame, textvariable=self.category_id, font=self.GUI.modify_leftframe_font, wraplength=self.GUI.modify_leftframe_wraplength, justify="left", width=0)
 
         # filepath label
         self.filename_title = tk.Label(frame, text="Filename", font=self.GUI.modify_leftframe_font)
@@ -208,7 +208,7 @@ class Show_Data_Package:
         if (category != None):
             self.category_id.set(category)
         else:
-            self.category_id.set("")
+            self.category_id.set("...")
         if (filename != None):
             self.current_filename_id.set(filename)
         else:
@@ -251,6 +251,8 @@ class Show_Data_Package:
         isSame = True
         if (dataset['title'] != newdataset['title']):
             isSame = False
+        if (dataset['creator'] != newdataset['creator']):
+            isSame = False
         if (dataset['filename'] != newdataset['filename']):
             isSame = False
         if (dataset['filepath'] != newdataset['filepath']):
@@ -274,6 +276,10 @@ class Show_Data_Package:
         self.last_modify_id.set("")
         self.data = db.Data()
         self.new_data = db.Data()
+
+
+    def select_category_button(self):
+        pass
 
 
 class Root:
@@ -308,6 +314,10 @@ class Page(Root):
         # Heading
         self.heading = tk.Label(self.root, text="Files Search Engine", font=('Arial', 32), height=1)
         self.heading.grid(row=1, column=1, columnspan=10, sticky="W",padx=self.GUI.main_frame_outside_padx, pady=self.GUI.main_frame_outside_pady)
+
+        # creator of the program
+        self.inventor_of_program = tk.Label(self.root, text="Created by Eddy Lau", font=('Arial', 10), fg="grey")
+        self.inventor_of_program.grid(row=5, column=1, sticky="E")
 
         # search title
         self.search_title = tk.LabelFrame(self.root, text="Search", font=('Arial', 16), height=2)
@@ -408,7 +418,7 @@ class Page(Root):
         self.history_steps_list = []
         self.history_listbox = tk.Listbox(self.history_tab, selectmode="single")
         # clear all history steps
-        self.history_clear_button = tk.Button(self.history_tab, text="Clear History", command=None)
+        self.history_clear_button = tk.Button(self.history_tab, text="Clear History", command=lambda: self.click_clear_history())
         self.history_clear_button.pack(side="bottom", fill=tk.X)
         # pack the history listbox at last
         self.history_listbox.pack(side="left", fill=tk.BOTH, expand=1)
@@ -429,11 +439,11 @@ class Page(Root):
         self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
         # new search step
         self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons, self.search_entry_id))
-        self.step_new_button.pack(side="bottom", fill=tk.X)
+
         # procedure search checkbutton
         self.step_procedure_search_checkbutton = tk.Checkbutton(self.step_tab, text="Procedure Search", variable=self.step_procedure_search_id, font=('Arial', 12))
         self.step_procedure_search_checkbutton.pack(side="bottom", fill=tk.X)
-
+        self.step_new_button.pack(side="bottom", fill=tk.X)
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
         # step_scrollbar
         self.step_scrollbar = ttk.Scrollbar(self.step_tab, orient="vertical")
@@ -448,7 +458,6 @@ class Page(Root):
         # show all the current files inside database
         # adding the first step of showing all the current files inside database
         self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons, self.search_entry_id)
-
         # use to save the temporary objects
         self.temporary_obj_list = []
         # use to save the current_objects_list, but only need to save filepath as it can retrieve from database
@@ -458,6 +467,13 @@ class Page(Root):
 
         # Keep updating the GUI
         self.root.mainloop()
+
+
+    def click_clear_history(self):
+        print("Clear all history steps")
+        self.history_listbox.delete(0, "end")
+        self.history_steps_list = []
+        database.clear_sql_history()
 
 
     def click_history_listbox_item(self,event):
@@ -490,7 +506,6 @@ class Page(Root):
 
     # this is the event when the user click the new search button
     def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons, search_entry_id):
-        self.step_new_button.config(activeforeground='blue')
         value = step_procedure_search_id.get()
         if (value == 1):
             is_procedure_search = True
@@ -502,8 +517,8 @@ class Page(Root):
         database.create_new_search(is_procedure_search=is_procedure_search)
         step_listbox.delete(0, "end")
         step_listbox.insert("end", listbox_title)
-        self.update_history()
 
+        self.update_history()
         self.show_table(database.get(isCount=True))
         self.add_step()
         # all filter button is reset to original
@@ -653,10 +668,12 @@ class Page(Root):
     def click_change_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
         left_frame.grid(row=1, column=3)
-        data_package.reset()
+
         # show the save button
         save_button.grid(row=8, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
+
+        data_package.reset()
 
         # get the selecting item in current database listbox
         selected_index = listbox.index(listbox.curselection())
@@ -1005,7 +1022,6 @@ database.add_category("hydroelectric")
 database.add_category("secret")
 database.add_category("Lithium battery")
 database.add_category("vehicle")
-database.add_category("energy efficiency")
 
 file_sep = ""
 if (get_platform() == "OS X"):
@@ -1018,7 +1034,7 @@ database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_pro
 database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
 database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="secret, vehicle,renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
     database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
