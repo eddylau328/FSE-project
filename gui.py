@@ -338,9 +338,9 @@ class Page(Root):
         self.treeview.heading("category", text="Category")
         self.treeview.column('title', width=150)
         self.treeview.column('filepath', width=200)
-        self.treeview.column('creator', width=100)
+        self.treeview.column('creator', width=80)
         self.treeview.column('last_modify', width=100)
-        self.treeview.column('category', width=300)
+        self.treeview.column('category', width=320)
         # click on the item in treeview
         self.treeview.bind("<Double-1>", self.click_treeview_item)
 
@@ -417,6 +417,9 @@ class Page(Root):
         self.step_listbox.bind('<Double-1>', self.click_step_listbox_item)
         # show that it is non-procedural search at the starting
         self.step_listbox.insert("end", f"Non-Procedural Search")
+
+        # this is start at the beginning of the program
+        database.create_new_search(is_procedure_search=False)
 
         # show all the current files inside database
         self.show_table(database.get(isCount=True))

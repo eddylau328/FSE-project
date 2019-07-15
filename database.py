@@ -201,7 +201,7 @@ class Database:
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
-        self.sql_steps = SQL_Solution(is_procedure_search=False)
+        self.sql_steps = None
         print("Connected to the database")
 
     # user can add categories for sorting the files
@@ -336,6 +336,17 @@ class Database:
         print(command)
         print(target)
         return {'sql':SQL(command=command, target=target), 'search_type':search_type}
+
+
+    # append the previous sql_solution to the history and clear the current sql_step and replace it with a new one
+    def create_new_search(self, is_procedure_search):
+        # when the first beginning of the program, sql_steps is None
+        # we add only we finish a steps
+        if (self.sql_steps != None):
+            self.sql_history.append(self.sql_steps)
+        # create a new sql_solution
+        self.sql_steps = SQL_Solution(is_procedure_search=is_procedure_search)
+
 
     # search_package could be provided, instead of raw_command
     def get(self, raw_command=None, isCount=None, select_field=None, order_field=None, search_package=None):
