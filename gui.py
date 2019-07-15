@@ -318,12 +318,15 @@ class Page(Root):
         # search
         # search_entry_id is the var saves the input string from search_entry
         self.search_entry_id = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14), width=64)
+        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14), width=80)
         self.search_entry.grid(row=4, column=2, sticky="W", padx=self.GUI.main_frame_inline_padx, pady=self.GUI.main_frame_inline_pady)
 
         # search button
-        self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=lambda: self.search(self.search_entry_id.get()))
+        self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=self.search)
         self.search_button.grid(row=4, column=3, sticky="W", pady=self.GUI.main_frame_inline_pady)
+
+        # bind the [enter button], which make it more easy to input search
+        self.search_entry.bind('<Return>', lambda event: self.search())
 
         # add button
         self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
@@ -406,7 +409,7 @@ class Page(Root):
         # used to save the steps the user took
         self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
         # new search step
-        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons))
+        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox, self.checkbuttons, self.search_entry_id))
         self.step_new_button.pack(side="bottom", fill=tk.X)
         # procedure search checkbutton
         self.step_procedure_search_checkbutton = tk.Checkbutton(self.step_tab, text="Procedure Search", variable=self.step_procedure_search_id, font=('Arial', 12))
@@ -444,7 +447,7 @@ class Page(Root):
 
 
     # this is the event when the user click the new search button
-    def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons):
+    def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons, search_entry_id):
         value = step_procedure_search_id.get()
         if (value == 1):
             is_procedure_search = True
@@ -461,6 +464,8 @@ class Page(Root):
         # all filter button is reset to original
         for button in checkbuttons:
             button.set(1)
+        # clear the search field
+        search_entry_id.set("")
 
 
     def create_window(self, w, h):
@@ -924,7 +929,8 @@ class Page(Root):
         self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column, fontsize=fontsize))
 
 
-    def search(self, raw_command):
+    def search(self):
+        raw_command = self.search_entry_id.get()
         self.show_table(database.get(raw_command=raw_command, isCount=True))
         self.add_step()
 
@@ -962,19 +968,19 @@ if (get_platform() == "OS X"):
 elif (get_platform() == "Windows"):
     file_sep = "\\"
 
-database.add(title="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_4a.txt", filetype=True), category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
-database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_5b.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
-database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_6c.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
-database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_1d.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_2e.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
-database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", filename=database.extract_filename("files"+file_sep+"solar_panel_proposal_3f.txt", filetype=True),category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="D Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_4a.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi This is the D solar panel 1. TESTINGGGGGGGGGGGGGGGGGGGGGGG")
+database.add(title="F Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_5b.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="Hi hello world")
+database.add(title="E Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_6c.txt", category="renewable energy", creator=creators[random.randint(0, 2)], description="HoHo")
+database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_proposal_1d.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
+database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 for i in range(1, 10):
-    database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", filename=database.extract_filename(f"files{file_sep}solar_panel_proposal_{i}.txt", filetype=True), category="renewable energy", creator=creators[random.randint(0, 2)])
+    database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
-database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", filename=database.extract_filename("files"+file_sep+"smart_lighting.pdf", filetype=True), category="smart device")
-database.add(title="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", filename=database.extract_filename("files"+file_sep+"indoor_air_quality_device.pdf", filetype=True), category="smart device,indoor air quality")
-database.add(title="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", filename=database.extract_filename("files"+file_sep+"air_filter_device.pdf", filetype=True), category="indoor air quality")
+database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
+database.add(title="IAQ Smart Device", filepath="files"+file_sep+"indoor_air_quality_device.pdf", category="smart device,indoor air quality")
+database.add(title="Air filter Device", filepath="files"+file_sep+"air_filter_device.pdf", category="indoor air quality")
 
 if (get_platform() == "Windows" or get_platform() == "OS X"):
     gui = Page()

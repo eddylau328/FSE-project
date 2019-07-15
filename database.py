@@ -237,7 +237,7 @@ class Database:
     def add(self, **kwargs):
         current_time = DateTime().get_current_time()
         command = '''INSERT INTO files_table (title, filepath, filename, category, creator, description, create_date, last_modify) VALUES (?,?,?,?,?,?,?,?)'''
-        file_obj = (kwargs.get('title', None), kwargs.get('filepath', None), kwargs.get('filename', None), kwargs.get('category', None), kwargs.get('creator', ""), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
+        file_obj = (kwargs.get('title', None), kwargs.get('filepath', None), kwargs.get('filename', self.extract_filename(kwargs.get('filepath', None), filetype=False)), kwargs.get('category', None), kwargs.get('creator', ""), kwargs.get('description', None), kwargs.get('current_time', current_time), current_time)
         sql = SQL(command=command, target=file_obj)
         self.sql_action(sql)
 
