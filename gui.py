@@ -395,17 +395,18 @@ class Page(Root):
         self.minor_tab_control.add(self.history_tab, text="History")
         self.minor_tab_control.grid(row=7, column=15)
 
-        # new search step
-        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=None)
-        self.step_new_button.pack(side="bottom", fill=tk.X)
-        # procedure search checkbutton
+        # procedure search checkbutton value
         self.step_procedure_search_id = tk.IntVar()
         self.step_procedure_search_id.set(0)
+        # used to save the steps the user took
+        self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
+        # new search step
+        self.step_new_button = tk.Button(self.step_tab, text="New Search", command=lambda: self.click_new_search(self.step_procedure_search_id, self.step_listbox))
+        self.step_new_button.pack(side="bottom", fill=tk.X)
+        # procedure search checkbutton
         self.step_procedure_search_checkbutton = tk.Checkbutton(self.step_tab, text="Procedure Search", variable=self.step_procedure_search_id, font=('Arial', 12))
         self.step_procedure_search_checkbutton.pack(side="bottom", fill=tk.X)
 
-        # used to save the steps the user took
-        self.step_listbox = tk.Listbox(self.step_tab, selectmode="single")
         self.step_listbox.pack(side="left", fill=tk.BOTH, expand=1)
         # step_scrollbar
         self.step_scrollbar = ttk.Scrollbar(self.step_tab, orient="vertical")
@@ -435,6 +436,23 @@ class Page(Root):
 
         # Keep updating the GUI
         self.root.mainloop()
+
+
+    # this is the event when the user click the new search button
+    def click_new_search(self, step_procedure_search_id, step_listbox):
+        value = step_procedure_search_id.get()
+        if (value == 1):
+            is_procedure_search = True
+            listbox_title = "Procedural Search"
+        else:
+            is_procedure_search = False
+            listbox_title = "Non-Procedural Search"
+
+        database.create_new_search(is_procedure_search=is_procedure_search)
+        step_listbox.delete(0, "end")
+        step_listbox.insert("end", listbox_title)
+        self.show_table(database.get(isCount=True))
+        self.add_step()
 
 
     def create_window(self, w, h):

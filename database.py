@@ -105,7 +105,7 @@ class Data:
 
 
 class SQL:
-    def __init__(self, command, target=None):
+    def __init__(self, command, target):
         self.command = command
         self.target = target
 
@@ -120,14 +120,26 @@ class SQL_Solution:
     # step_num is assumed to be started from 1 to ...
     def get_step(self, step_num=None, state=None):
         if (step_num != None):
-            return self.steps[step_num - 1]
+            try:
+                return self.steps[step_num - 1]
+            except:
+                return None
         else:
             if (state == "current"):
-                return self.steps[-1]
+                try:
+                    return self.steps[-1]
+                except:
+                    return None
             elif (state == "previous"):
-                return self.steps[-2]
+                try:
+                    return self.steps[-2]
+                except:
+                    return None
             elif (state == "start"):
-                return self.steps[0]
+                try:
+                    return self.steps[0]
+                except:
+                    return None
             else:
                 return None
 
@@ -201,7 +213,7 @@ class Database:
         self.c.execute("""CREATE TABLE if not exists category_list (category text)""")
         self.conn.commit()
         self.sql_history = []
-        self.sql_steps = None
+        self.sql_solution = None
         print("Connected to the database")
 
     # user can add categories for sorting the files
@@ -251,16 +263,16 @@ class Database:
     def sql_search(self, sql):
         # connection to the database
         with self.conn:
-            if (sql.target == None):
-                self.c.execute(sql.command)
-            else:
-                self.c.execute(sql.command, sql.target)
+            self.c.execute(sql.command, sql.target)
         return self.c.fetchall()
 
     # used to create the select field command
-    def set_select_field_command(self, select_field):
+    def set_select_field_command(self, select_field, previous_sql=None):
         if (select_field == None or select_field == "all"):
-            command = '''SELECT * FROM files_table'''
+            if (previous_sql == None):
+                command = '''SELECT * FROM files_table'''
+            else:
+                command = '''SELECT * FROM ''' + f" ({previous_sql.command}) "
         else:
             count = 0
             command = '''SELECT '''
@@ -270,17 +282,33 @@ class Database:
                 else:
                     command = command + string
                 count += 1
-            command = command + ''' FROM files_table '''
+            if (previous_sql == None):
+                command = command + ''' FROM files_table '''
+            else:
+                command = command + f" FROM ({previous_sql.command}) "
         return command
 
-    def search_package_to_sql(self,search_package):
+    def search_package_to_sql(self,search_package, sql_solution):
         search_line = search_package.search_line
         search_method_list = search_package.search_method_list
         select_field = search_package.select_field
         order_field = search_package.order_field
-        # return a sql command that have user's selected fields
-        command = self.set_select_field_command(select_field)
-        target = None
+
+        # this is used to do the procedure search
+        if (sql_solution.procedure_search == True):
+            # current step is becuz the new step is not yet added
+            if (sql_solution.get_step(state="current") == None):
+                previous_sql = None
+            else:
+                previous_sql = sql_solution.get_step(state="current").sql
+            # return a sql command that have user's selected fields
+            if (previous_sql == None):
+                command = self.set_select_field_command(select_field)
+            else:
+                command = self.set_select_field_command(select_field, previous_sql=previous_sql)
+        else:
+            command = self.set_select_field_command(select_field)
+        target = ()
         space = " "
         case_insensitive = "COLLATE NOCASE"
         if (len(search_line) == 0):
@@ -292,7 +320,9 @@ class Database:
             if ( Search_Method.EXACT in search_method_list and Search_Method.RELATE in search_method_list):
                 # the current searching is mixed search
                 search_type = Search_Type.SEARCH_MIX
-                target = ()
+                if (sql_solution.procedure_search == True):
+                    if (previous_sql != None):
+                        target = previous_sql.target
                 count = 0
                 for word in search_line:
                     if (word == "(" or word == ")" or word == "and" or word == "or"):
@@ -319,8 +349,9 @@ class Database:
                     search_type = Search_Type.SEARCH_RELATE
                     search_method = Search_Method.RELATE
                     assign_string = "LIKE"
-                target = ()
-
+                if (sql_solution.procedure_search == True):
+                    if (previous_sql != None):
+                        target = previous_sql.target
                 for word in search_line:
                     if (word == "(" or word == ")" or word == "and" or word == "or"):
                         command = command + space + word
@@ -342,10 +373,10 @@ class Database:
     def create_new_search(self, is_procedure_search):
         # when the first beginning of the program, sql_steps is None
         # we add only we finish a steps
-        if (self.sql_steps != None):
-            self.sql_history.append(self.sql_steps)
+        if (self.sql_solution != None):
+            self.sql_history.append(self.sql_solution)
         # create a new sql_solution
-        self.sql_steps = SQL_Solution(is_procedure_search=is_procedure_search)
+        self.sql_solution = SQL_Solution(is_procedure_search=is_procedure_search)
 
 
     # search_package could be provided, instead of raw_command
@@ -361,13 +392,16 @@ class Database:
             new_search_package = Search_Package(search_line=search_line,search_method_list=search_method_list,select_field=select_field,order_field=order_field)
         else:
             new_search_package = search_package
-        sql_and_type = self.search_package_to_sql(new_search_package)
+        if (isCount == True):
+            sql_and_type = self.search_package_to_sql(search_package=new_search_package, sql_solution=self.sql_solution)
+        else:
+            sql_and_type = self.search_package_to_sql(search_package=new_search_package)
         sql = sql_and_type.get('sql')
         search_type = sql_and_type.get('search_type')
         result = self.sql_search(sql)
         if (isCount == True):
-            step = SQL_Step(step_num=self.sql_steps.get_num_of_steps()+1, sql=sql, search_package=new_search_package, search_type=search_type)
-            self.sql_steps.add_step(step)
+            step = SQL_Step(step_num=self.sql_solution.get_num_of_steps()+1, sql=sql, search_package=new_search_package, search_type=search_type)
+            self.sql_solution.add_step(step)
         return self.format_dataset_to_dictionary(result, select_field)
 
 
@@ -432,7 +466,7 @@ class Database:
                 print(data)
 
     def get_sql_step(self, step_num=None, state=None):
-        return self.sql_steps.get_step(step_num=step_num, state=state)
+        return self.sql_solution.get_step(step_num=step_num, state=state)
 
     def get_sql_history(self):
         return self.sql_history
