@@ -36,6 +36,16 @@ class GUI:
             self.main_frame_inline_padx = 5
             self.main_frame_inline_pady = 5
 
+            # treeview column width
+            self.treeview_width_title = 150
+            self.treeview_width_filename = 200
+            self.treeview_width_creator = 80
+            self.treeview_width_last_modify = 100
+            self.treeview_width_category = 320
+
+            # search entry width
+            self.main_frame_search_entry_width = 80
+
             # select category window
             self.select_category_window_width = 300
             self.select_category_window_height = 300
@@ -54,7 +64,7 @@ class GUI:
             self.modify_listbox_width = 40
             self.modify_width = 900
             self.modify_height = 500
-            self.modify_leftframe_wraplength = 200
+            self.modify_leftframe_wraplength = 220
             self.modify_leftframe_width = 32
             self.modify_leftframe_font = ('Arial', 9)
 
@@ -66,17 +76,27 @@ class GUI:
             self.treeview_popup_pady = 5
             self.treeview_popup_labelframe_padx = 10
             self.treeview_popup_labelframe_pady = 10
-            self.treeview_popup_data_wraplength = 182
+            self.treeview_popup_data_wraplength = 190
 
             # main frame settings constant
             self.main_frame_outside_padx = 5
-            self.main_frame_outside_pady = 20
+            self.main_frame_outside_pady = 15
             self.main_frame_inline_padx = 5
             self.main_frame_inline_pady = 5
 
+            # treeview column width
+            self.treeview_width_title = 150
+            self.treeview_width_filename = 200
+            self.treeview_width_creator = 80
+            self.treeview_width_last_modify = 115
+            self.treeview_width_category = 350
+
+            # search entry width
+            self.main_frame_search_entry_width = 68
+
             # select category window
-            self.select_category_window_width = 300
-            self.select_category_window_height = 300
+            self.select_category_window_width = 400
+            self.select_category_window_height = 230
 
             self.screen_width = 0
             self.screen_height = 0
@@ -132,7 +152,7 @@ class Show_Data_Package:
         # category entry id
         self.category_id = tk.StringVar()
         self.category_id.set("")
-        self.category_label = tk.Button(frame, textvariable=self.category_id, font=GUI.modify_leftframe_font, wraplength=GUI.modify_leftframe_wraplength, justify="left", width=0)
+        self.category_label = tk.Button(frame, textvariable=self.category_id, font=GUI.modify_leftframe_font, wraplength=GUI.modify_leftframe_wraplength, justify="left", width=30, command=self.select_category_button)
 
         # filepath label
         self.filename_title = tk.Label(frame, text="Filename", font=GUI.modify_leftframe_font)
@@ -306,15 +326,31 @@ class Show_Data_Package:
 
     def select_category_button(self):
         new_window = self.create_window(GUI.select_category_window_width, GUI.select_category_window_height)
+        labelframe = tk.LabelFrame(new_window, text="Category")
+        labelframe.pack(side="top", fill=tk.X, padx=5, pady=2)
         categories = database.get_category()
+        current_category_list = self.category_id.get().split(",")
         row = 0
         column = 0
         for category in database.get_category():
             if (row == GUI.select_category_window_row_limit):
                 column += 1
                 row = 0
-            self.add_checkbutton(self.filter_title, category[0], row=row, column=column, fontsize=GUI.filter_checkbutton_fontsize)
+            self.add_checkbutton(labelframe, category[0], row=row, column=column, fontsize=GUI.filter_checkbutton_fontsize)
+            self.checkbuttons[-1].set(0)
+            if (category[0] in current_category_list):
+                self.checkbuttons[-1].set(1)
             row += 1
+        update_button = tk.Button(new_window, text="Update", command=self.update_category)
+        update_button.pack(side="bottom", pady=2)
+
+    def update_category(self):
+        new_category_list = []
+        for checkbutton in self.checkbuttons:
+            if (checkbutton.get() == 1):
+                new_category_list.append(checkbutton.category)
+        self.category_id.set(",".join(new_category_list))
+
 
     def create_window(self, w, h):
         new_window = tk.Toplevel(self.root)
@@ -322,6 +358,9 @@ class Show_Data_Package:
         y_coor = (GUI.screen_height / 2) - (h / 2)
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
         return new_window
+
+    def add_checkbutton(self, root, name, row, column, fontsize):
+        self.checkbuttons.append(Checkbutton(root, name=name, row=row, column=column, fontsize=fontsize, padx=2, pady=2))
 
 
 class Root:
@@ -338,14 +377,20 @@ class Root:
 
 
 class Checkbutton:
-    def __init__(self, root, name, row, column, fontsize):
+    def __init__(self, root, name, row, column, fontsize, padx=None, pady=None):
         self.value_id = tk.IntVar(value=1)
         self.category = name
         self.checkbutton = tk.Checkbutton(root, text=name, variable=self.value_id, font=('Arial', fontsize))
-        self.checkbutton.grid(row=row, column=column, sticky="W")
+        if (padx != None and pady != None):
+            self.checkbutton.grid(row=row, column=column, sticky="W", padx=padx, pady=pady)
+        else:
+            self.checkbutton.grid(row=row, column=column, sticky="W")
 
     def set(self, value):
         self.value_id.set(value)
+
+    def get(self):
+        return self.value_id.get()
 
 class Page(Root):
     def __init__(self):
@@ -368,7 +413,7 @@ class Page(Root):
         # search
         # search_entry_id is the var saves the input string from search_entry
         self.search_entry_id = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14), width=80)
+        self.search_entry = tk.Entry(self.search_title, textvariable=self.search_entry_id, font=('Arial', 14), width=GUI.main_frame_search_entry_width)
         self.search_entry.grid(row=4, column=2, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         # search button
@@ -389,18 +434,18 @@ class Page(Root):
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
         self.treeview.pack(side="left", expand=True, fill=tk.Y)
         # set up the columns and headings
-        self.treeview["columns"] = ["title", "filepath", "creator", "last_modify", "category"]
+        self.treeview["columns"] = ["title", "filename", "creator", "last_modify", "category"]
         self.treeview["show"] = "headings"
         self.treeview.heading("title", text="Title")
-        self.treeview.heading("filepath", text="File Name")
+        self.treeview.heading("filename", text="File Name")
         self.treeview.heading("creator", text="Creator")
         self.treeview.heading("last_modify", text="Last Modify")
         self.treeview.heading("category", text="Category")
-        self.treeview.column('title', width=150)
-        self.treeview.column('filepath', width=200)
-        self.treeview.column('creator', width=80)
-        self.treeview.column('last_modify', width=100)
-        self.treeview.column('category', width=320)
+        self.treeview.column('title', width=GUI.treeview_width_title)
+        self.treeview.column('filename', width=GUI.treeview_width_filename)
+        self.treeview.column('creator', width=GUI.treeview_width_creator)
+        self.treeview.column('last_modify', width=GUI.treeview_width_last_modify)
+        self.treeview.column('category', width=GUI.treeview_width_category)
         # click on the item in treeview
         self.treeview.bind("<Double-1>", self.click_treeview_item)
 
@@ -544,6 +589,7 @@ class Page(Root):
             self.history_listbox.select_set(tk.END)
         print(self.history_steps_list)
 
+
     # this is the event when the user click the new search button
     def click_new_search(self, step_procedure_search_id, step_listbox, checkbuttons, search_entry_id):
         value = step_procedure_search_id.get()
@@ -580,13 +626,10 @@ class Page(Root):
     def add_delete_modify_files(self):
         new_window = self.create_window(GUI.modify_width, GUI.modify_height)
 
-        # skip some spaces in both dir
-        new_window.grid_rowconfigure(0, minsize=10)
-        new_window.grid_columnconfigure(0, minsize=10)
 
         # frame is used to contain everything
         right_frame = tk.LabelFrame(new_window, text="")
-        right_frame.grid(row=1, column=1, rowspan=500)
+        right_frame.pack(side="left", fill=tk.Y)
 
         # skip some spaces in both dir in right_frame
         right_frame.grid_rowconfigure(0, minsize=10)
@@ -611,17 +654,11 @@ class Page(Root):
         browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(new_window, change_listbox))
         browse_button.grid(row=28, column=1, columnspan=2, sticky="W")
 
-        # skip some spaces for the x-dir in right frame
-        right_frame.grid_columnconfigure(4, minsize=10)
-
-        # skip some spaces for the x-dir in new_window
-        new_window.grid_columnconfigure(2, minsize=10)
-
         # left frame is the frame to contains the data of the file
         left_frame = tk.LabelFrame(new_window, text="")
-        left_frame.grid(row=1, column=3)
+        left_frame.pack(side="right", fill=tk.Y)
         # hide it first
-        left_frame.grid_forget()
+        left_frame.pack_forget()
 
         data_package = Show_Data_Package(left_frame)
         data_package.show_name(row=0, column=1)
@@ -674,7 +711,8 @@ class Page(Root):
 
     def click_current_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
-        left_frame.grid(row=1, column=3)
+        left_frame.pack(side="right", fill=tk.Y)
+
         update_button.grid(row=8, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
 
@@ -707,7 +745,7 @@ class Page(Root):
 
     def click_change_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
         # show the left_frame
-        left_frame.grid(row=1, column=3)
+        left_frame.pack(side="right", fill=tk.Y)
 
         # show the save button
         save_button.grid(row=8, column=1, columnspan=3, pady=10)
@@ -727,7 +765,7 @@ class Page(Root):
 
     def click_move_in(self, left_frame, data_package, change_listbox, current_listbox):
         # close the left_frame
-        left_frame.grid_forget()
+        left_frame.pack_forget()
         data_package.reset()
 
         # move the item from change listbox to current listbox
@@ -779,7 +817,7 @@ class Page(Root):
 
     def click_move_out(self, left_frame, data_package, change_listbox, current_listbox):
         # close the left_frame
-        left_frame.grid_forget()
+        left_frame.pack_forget()
         data_package.reset()
 
         # move the item from current listbox to change listbox
@@ -993,7 +1031,7 @@ class Page(Root):
     def filter(self, filtertype):
         filterList = []
         for button in self.checkbuttons:
-            if (button.value_id.get() == 1):
+            if (button.get() == 1):
                 filterList.append(button.category)
         field = "category"
         if (filtertype == "union"):
