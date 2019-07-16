@@ -15,7 +15,7 @@ class GUI:
             # Modify FILES POPUP WINDOW CONSTANT
             self.modify_listbox_width = 28
             self.modify_width = 900
-            self.modify_height = 550
+            self.modify_height = 500
             self.modify_leftframe_wraplength = 165
             self.modify_leftframe_width = 30
             self.modify_leftframe_font = ('Arial', 12)
@@ -47,8 +47,8 @@ class GUI:
             self.main_frame_search_entry_width = 80
 
             # select category window
-            self.select_category_window_width = 300
-            self.select_category_window_height = 300
+            self.select_category_window_width = 400
+            self.select_category_window_height = 230
 
             self.screen_width = 0
             self.screen_height = 0
@@ -152,7 +152,7 @@ class Show_Data_Package:
         # category entry id
         self.category_id = tk.StringVar()
         self.category_id.set("")
-        self.category_label = tk.Button(frame, textvariable=self.category_id, font=GUI.modify_leftframe_font, wraplength=GUI.modify_leftframe_wraplength, justify="left", width=30, command=self.select_category_button)
+        self.category_label = tk.Button(frame, textvariable=self.category_id, font=GUI.modify_leftframe_font, wraplength=GUI.modify_leftframe_wraplength, justify="left", command=self.select_category_button)
 
         # filepath label
         self.filename_title = tk.Label(frame, text="Filename", font=GUI.modify_leftframe_font)
@@ -201,7 +201,7 @@ class Show_Data_Package:
 
     # row, column is start from corner
     def show_category(self, row, column):
-        self.category_title.grid(row=row, column=column, sticky="W", padx=5, pady=8)
+        self.category_title.grid(row=row, column=column, sticky="WN", padx=5, pady=8)
         self.category_label.grid(row=row, column=column + 1, sticky="W", padx=5, pady=8)
 
     # row, column is start from corner
@@ -330,6 +330,8 @@ class Show_Data_Package:
         labelframe.pack(side="top", fill=tk.X, padx=5, pady=2)
         categories = database.get_category()
         current_category_list = self.category_id.get().split(",")
+        # reset the checkbutton list
+        self.checkbuttons = []
         row = 0
         column = 0
         for category in database.get_category():
@@ -338,19 +340,25 @@ class Show_Data_Package:
                 row = 0
             self.add_checkbutton(labelframe, category[0], row=row, column=column, fontsize=GUI.filter_checkbutton_fontsize)
             self.checkbuttons[-1].set(0)
+            # category[0] is becuz it is tuple object
             if (category[0] in current_category_list):
                 self.checkbuttons[-1].set(1)
             row += 1
-        update_button = tk.Button(new_window, text="Update", command=self.update_category)
+        update_button = tk.Button(new_window, text="Update", command=lambda: self.update_category(new_window))
         update_button.pack(side="bottom", pady=2)
 
-    def update_category(self):
+    def update_category(self, window):
         new_category_list = []
         for checkbutton in self.checkbuttons:
             if (checkbutton.get() == 1):
                 new_category_list.append(checkbutton.category)
-        self.category_id.set(",".join(new_category_list))
-
+        print(new_category_list)
+        self.category_id.set("")
+        if (len(new_category_list) > 0):
+            self.category_id.set(",".join(new_category_list))
+        else:
+            self.category_id.set("...")
+        window.destroy()
 
     def create_window(self, w, h):
         new_window = tk.Toplevel(self.root)
@@ -654,13 +662,28 @@ class Page(Root):
         browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(new_window, change_listbox))
         browse_button.grid(row=28, column=1, columnspan=2, sticky="W")
 
+        # skip some spaces in both dir in right_frame
+        right_frame.grid_columnconfigure(4, minsize=10)
+
         # left frame is the frame to contains the data of the file
         left_frame = tk.LabelFrame(new_window, text="")
         left_frame.pack(side="right", fill=tk.Y)
+
+        left_frame_canvas = tk.Canvas(left_frame)
+        # history_scrollbar
+        left_frame_scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=left_frame_canvas.yview)
+        left_frame_canvas.config(yscrollcommand=left_frame_scrollbar.set)
+        left_frame_scrollbar.pack(side="right", fill=tk.Y)
+
+        canvas_inner_frame = tk.Frame(left_frame_canvas)
+
+        left_frame_canvas.create_window((0,0), window=canvas_inner_frame, anchor="nw")
+        left_frame_canvas.pack(side="left", fill=tk.Y)
+        canvas_inner_frame.bind("<Configure>", lambda event,canvas=left_frame_canvas : self.onFrameConfigure(canvas))
         # hide it first
         left_frame.pack_forget()
 
-        data_package = Show_Data_Package(left_frame)
+        data_package = Show_Data_Package(canvas_inner_frame)
         data_package.show_name(row=0, column=1)
         data_package.show_creator(row=1, column=1)
         data_package.show_category(row=2, column=1)
@@ -674,11 +697,11 @@ class Page(Root):
         delete_button.grid(row=28, column=1, sticky="E")
 
         # update button is used to update the data of the file
-        update_button = tk.Button(left_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
+        update_button = tk.Button(canvas_inner_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
         update_button.grid(row=8, column=1, columnspan=3, pady=10)
         update_button.grid_forget()
         # save button is used to save the data currently
-        save_button = tk.Button(left_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
+        save_button = tk.Button(canvas_inner_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
         save_button.grid(row=8, column=1, columnspan=3, pady=10)
         save_button.grid_forget()
 
@@ -698,6 +721,10 @@ class Page(Root):
 
         # closing new_window event which is clearing all the obj inside self.temporary_obj_list
         new_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_delete_modify_files_window(new_window))
+
+
+    def onFrameConfigure(self, canvas):
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
 
     # this is used to clear out all the things inside the temporary obj list
