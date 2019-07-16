@@ -56,6 +56,18 @@ class GUI:
             # this limits the select_category_window
             self.select_category_window_row_limit = 6
 
+            # window size of the add_category popup
+            self.add_category_window_width = 900
+            self.add_category_window_height = 500
+            self.add_category_bg_frame_width = 870
+            self.add_category_bg_frame_height = 470
+            self.add_category_bg_padx = 15
+            self.add_category_bg_pady = 15
+            self.add_category_category_list_width = 30
+            self.add_category_category_list_height = 23
+            self.add_category_report_listbox_width = 60
+            self.add_category_report_listbox_height = 18
+
         elif (os_platform == "Windows"):
 
             self.filter_checkbutton_fontsize = 9
@@ -103,6 +115,16 @@ class GUI:
 
             # this limits the select_category_window
             self.select_category_window_row_limit = 6
+
+            # window size of the add_category popup
+            self.add_category_window_width = 500
+            self.add_category_window_height = 250
+            self.add_category_bg_frame_width = 870
+            self.add_category_bg_frame_height = 470
+            self.add_category_bg_padx = 15
+            self.add_category_bg_pady = 15
+            self.add_category_category_list_width = 200
+            self.add_category_category_list_height = 40
 
 
 def get_platform():
@@ -435,6 +457,10 @@ class Page(Root):
         self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
         self.add_button.grid(row=4, column=12, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
+        # add category button
+        self.add_category_button = tk.Button(self.search_title, text="Add Category", command=lambda: self.add_category())
+        self.add_category_button.grid(row=4,column=13, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
+
         self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial', 16))
         self.result_title.grid(row=5, column=1, rowspan=100, columnspan=10, padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
         # table
@@ -466,7 +492,7 @@ class Page(Root):
         # filter labelframe
         row = 10
         self.filter_title = tk.LabelFrame(self.search_title, text="Filter", font=('Arial', 16))
-        self.filter_title.grid(row=row, column=12, rowspan=100, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
+        self.filter_title.grid(row=row, column=12, rowspan=100, columnspan=10,sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
         # checkbuttons for the database to sort in category
         self.checkbuttons = []
         row = 0
@@ -504,7 +530,7 @@ class Page(Root):
         self.minor_tab_control.add(self.step_tab, text="Steps")
         self.history_tab = ttk.Frame(self.minor_tab_control)
         self.minor_tab_control.add(self.history_tab, text="History")
-        self.minor_tab_control.grid(row=9, column=12, padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
+        self.minor_tab_control.grid(row=9, column=12, columnspan=10,padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         # history
         # it saves the step num, index in the history_listbox, and the corresponding steps it refer to
@@ -560,6 +586,56 @@ class Page(Root):
 
         # Keep updating the GUI
         self.root.mainloop()
+
+    # add category window will be pop up after clicking add category button
+    def add_category(self):
+        # create window
+        new_window = self.create_window(GUI.add_category_window_width, GUI.add_category_window_height)
+        # canvas for the window
+        canvas = tk.Canvas(new_window)
+        canvas.pack(fill=tk.BOTH, expand=1)
+        # frame on the bg
+        frame = tk.Frame(canvas)
+        canvas.create_window((0,0), window=frame, anchor="nw")
+
+        bg_label_frame = tk.LabelFrame(frame,width=GUI.add_category_bg_frame_width, height=GUI.add_category_bg_frame_height)
+        bg_label_frame.pack(padx=GUI.add_category_bg_padx, pady=GUI.add_category_bg_pady)
+        bg_label_frame.pack_propagate(0)
+
+        # left
+        # label frame to hold all the left stuff
+        left_label_frame = tk.LabelFrame(bg_label_frame, text="Category List")
+        left_label_frame.pack(side="left", fill=tk.Y,padx=10,pady=5)
+        category_list = tk.Listbox(left_label_frame, width= GUI.add_category_category_list_width, height= GUI.add_category_category_list_height, selectmode="single")
+        category_list.pack(side="top", fill=tk.BOTH, padx=6, pady=5)
+
+        # add category button and delete category button
+        add_category_button = tk.Button(left_label_frame, text="+", command=None)
+        delete_category_button = tk.Button(left_label_frame, text="-", command=None)
+        delete_category_button.pack(side="right", padx=2,pady=2)
+        add_category_button.pack(side="right", padx=2,pady=2)
+
+        # right
+        # right frame to hold all the right stuff
+        right_label_frame = tk.Frame(bg_label_frame)
+        right_label_frame.pack(side="right", fill=tk.Y)
+        # right top frame
+        right_top_frame = tk.LabelFrame(right_label_frame, text="New")
+        right_top_frame.pack(side="top", fill=tk.X, padx=10, pady=5)
+        # category title
+        category_title = tk.Label(right_top_frame, text="Category Name :")
+        category_title.grid(row=0, column=0, sticky="W", padx=10, pady=4)
+        category_id = tk.StringVar()
+        category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
+        category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
+        update_button = tk.Button(right_top_frame, text="Update", command=None)
+        update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
+        # right bottom frame
+        right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
+        right_bottom_frame.pack(side="bottom", fill=tk.X, padx=10, pady=5)
+        # report listbox
+        report_listbox = tk.Listbox(right_bottom_frame, selectmode="single", width=GUI.add_category_report_listbox_width, height=GUI.add_category_report_listbox_height)
+        report_listbox.pack(fill=tk.BOTH, pady=4)
 
 
     def click_clear_history(self):
