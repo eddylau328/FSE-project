@@ -63,10 +63,13 @@ class GUI:
             self.add_category_bg_frame_height = 470
             self.add_category_bg_padx = 15
             self.add_category_bg_pady = 15
-            self.add_category_category_list_width = 30
-            self.add_category_category_list_height = 23
-            self.add_category_report_listbox_width = 60
-            self.add_category_report_listbox_height = 18
+            self.add_category_category_treeview_width = 260
+            self.add_category_category_treeview_height = 23
+            self.add_category_report_treeview_width = 500    ## maintain at this number
+            self.add_category_report_treeview_height = 18
+            self.add_category_report_treeview_column_1_w = 60
+            self.add_category_report_treeview_column_2_w = 280
+            self.add_category_report_treeview_column_3_w = 160
 
         elif (os_platform == "Windows"):
 
@@ -123,8 +126,13 @@ class GUI:
             self.add_category_bg_frame_height = 470
             self.add_category_bg_padx = 15
             self.add_category_bg_pady = 15
-            self.add_category_category_list_width = 200
-            self.add_category_category_list_height = 40
+            self.add_category_category_treeview_width = 50
+            self.add_category_category_treeview_height = 23
+            self.add_category_report_treeview_width = 500    ## maintain at this number
+            self.add_category_report_treeview_height = 18
+            self.add_category_report_treeview_column_1_w = 60
+            self.add_category_report_treeview_column_2_w = 280
+            self.add_category_report_treeview_column_3_w = 160
 
 
 def get_platform():
@@ -372,7 +380,7 @@ class Show_Data_Package:
     def update_category(self, window):
         new_category_list = []
         for checkbutton in self.checkbuttons:
-            if (checkbutton.get() == 1):
+            if (checkbutton.get() == 1 and database.check_category_exist(checkbutton.category)):
                 new_category_list.append(checkbutton.category)
         print(new_category_list)
         self.category_id.set("")
@@ -421,6 +429,10 @@ class Checkbutton:
 
     def get(self):
         return self.value_id.get()
+
+    def __del__(self):
+        self.checkbutton.destroy()
+
 
 class Page(Root):
     def __init__(self):
@@ -494,15 +506,7 @@ class Page(Root):
         self.filter_title = tk.LabelFrame(self.search_title, text="Filter", font=('Arial', 16))
         self.filter_title.grid(row=row, column=12, rowspan=100, columnspan=10,sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
         # checkbuttons for the database to sort in category
-        self.checkbuttons = []
-        row = 0
-        column = 0
-        for category in database.get_category():
-            if (row == GUI.select_category_window_row_limit):
-                column += 1
-                row = 0
-            self.add_checkbutton(self.filter_title, category[0], row=row, column=column, fontsize=GUI.filter_checkbutton_fontsize)
-            row += 1
+        self.update_main_frame_checkbuttons()
 
         row, column = 7, 0
         self.filter_radiobutton_id = tk.StringVar()
@@ -581,6 +585,8 @@ class Page(Root):
         self.temporary_obj_list = []
         # use to save the current_objects_list, but only need to save filepath as it can retrieve from database
         self.current_filepath_list = []
+        # use to save the selected category in the add_category
+        self.current_select_category = None
 
         print("GUI display is ready")
 
@@ -605,9 +611,18 @@ class Page(Root):
         # left
         # label frame to hold all the left stuff
         left_label_frame = tk.LabelFrame(bg_label_frame, text="Category List")
-        left_label_frame.pack(side="left", fill=tk.Y,padx=10,pady=5)
-        category_list = tk.Listbox(left_label_frame, width= GUI.add_category_category_list_width, height= GUI.add_category_category_list_height, selectmode="single")
-        category_list.pack(side="top", fill=tk.BOTH, padx=6, pady=5)
+        left_label_frame.pack(side="left",padx=10,pady=5)
+        style = ttk.Style(new_window)
+        style.configure('Category.Treeview', rowheight=20)
+        category_treeview = ttk.Treeview(left_label_frame, height=GUI.add_category_category_treeview_height, selectmode="browse", style='Category.Treeview')
+        category_treeview.pack(side="top", padx=6, pady=5)
+        category_treeview["columns"] = ["category"]
+        category_treeview["show"] = "headings"
+        category_treeview.heading("category", text="Category Name")
+        category_treeview.column("category", width=GUI.add_category_category_treeview_width)
+        # name is tuple
+        for name in database.get_category():
+            category_treeview.insert("","end",name[0], values=(name[0],))
 
         # add category button and delete category button
         add_category_button = tk.Button(left_label_frame, text="+", command=None)
@@ -628,14 +643,62 @@ class Page(Root):
         category_id = tk.StringVar()
         category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
         category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
-        update_button = tk.Button(right_top_frame, text="Update", command=None)
+        update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id))
         update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
         # right bottom frame
         right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
         right_bottom_frame.pack(side="bottom", fill=tk.X, padx=10, pady=5)
-        # report listbox
-        report_listbox = tk.Listbox(right_bottom_frame, selectmode="single", width=GUI.add_category_report_listbox_width, height=GUI.add_category_report_listbox_height)
-        report_listbox.pack(fill=tk.BOTH, pady=4)
+        # report treeview
+        style.configure('Report.Treeview', rowheight=40)
+        report_treeview = ttk.Treeview(right_bottom_frame, selectmode="browse", height=GUI.add_category_report_treeview_height, style='Report.Treeview')
+        report_treeview.pack( padx=4, pady=4)
+        # set up the columns and headings
+        report_treeview["columns"] = ["action", "details", "category_name"]
+        report_treeview["show"] = "headings"
+        report_treeview.heading("action", text="Action")
+        report_treeview.heading("details", text="Details")
+        report_treeview.heading("category_name", text="Category Name")
+        report_treeview.column("action", width=GUI.add_category_report_treeview_column_1_w)
+        report_treeview.column("details", width=GUI.add_category_report_treeview_column_2_w)
+        report_treeview.column("category_name", width=GUI.add_category_report_treeview_column_3_w)
+
+        for i in range(0, 4):
+            report_treeview.insert("", i,f"action{i}", values=(f"Play{i}", "Nothing", f"Name{i}"))
+        report_treeview.insert("", 0, f"action100", values=("test", "test", "test"))
+
+        # add clicking event in category treeview
+        category_treeview.bind('<Double-1>', lambda event,treeview=category_treeview, entry_id=category_id: self.click_category_treeview_item(treeview, entry_id))
+        # add clicking event in report treeview
+
+
+    def click_category_update_button(self, entry_id):
+        new = entry_id.get()
+        original = self.current_select_category
+        if (new != original):
+            result = database.check_category_conflict(original)
+            if (result['conflict'] == True):
+                print(result['conflict_data'])
+            else:
+                database.update_category(original=original, new=new)
+                self.update_main_frame_checkbuttons()
+
+
+    def update_main_frame_checkbuttons(self):
+        self.checkbuttons = []
+        row = 0
+        column = 0
+        for category in database.get_category():
+            if (row == GUI.select_category_window_row_limit):
+                column += 1
+                row = 0
+            self.add_checkbutton(self.filter_title, category[0], row=row, column=column, fontsize=GUI.filter_checkbutton_fontsize)
+            row += 1
+
+
+    def click_category_treeview_item(self, treeview, entry_id):
+        name = treeview.selection()[0]
+        entry_id.set(name)
+        self.current_select_category = name
 
 
     def click_clear_history(self):
@@ -654,6 +717,7 @@ class Page(Root):
                 step_num = step_data.get('step_num')
                 step = database.get_sql_history(step_index=step_index, step_num=step_num)
                 self.show_table(database.get(isCount=False, sql=step.sql))
+
 
     def update_history(self):
         if (database.get_sql_history() != None):

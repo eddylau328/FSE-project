@@ -225,19 +225,44 @@ class Database:
 
     # user can add categories for sorting the files
     def add_category(self, new_category):
-        currentCategory = self.get_category()
-        for category in currentCategory:
-            if (new_category.casefold() == category[0].casefold()):
-                print("Already have this category")
-                return
-        with self.conn:
-            self.c.execute("INSERT INTO category_list VALUES (:category)", {'category': new_category.casefold()})
+        if (self.check_category_exist(new_category) == False):
+            with self.conn:
+                self.c.execute("INSERT INTO category_list VALUES (:category)", {'category': new_category.casefold()})
+        else:
+            return
 
     # get the categories designed by the users
     def get_category(self):
         with self.conn:
             self.c.execute("SELECT * FROM category_list")
             return self.c.fetchall()
+
+    def delet_category(self, category):
+        with self.conn:
+            self.c.excute("DELETE FROM category_list WHERE category=?", (category,))
+
+
+    def check_category_conflict(self, original):
+        with self.conn:
+            self.c.execute("SELECT title, filename, category FROM files_table WHERE category LIKE ?", ('%' + original + '%',))
+            result = self.c.fetchall()
+        if (len(result) > 0):
+            return {'conflict_data':result, 'conflict': True}
+        else:
+            return {'conflict_data':result, 'conflict': False}
+
+    def check_category_exist(self, new_category):
+        currentCategory = self.get_category()
+        for category in currentCategory:
+            if (new_category.casefold() == category[0].casefold()):
+                print("Already have this category")
+                return True
+        return False
+
+
+    def update_category(self, original, new):
+        with self.conn:
+            self.c.execute("UPDATE category_list SET category=? WHERE category=?", (new, original))
 
     # adding files detail to the files_table in the database
     def add(self, **kwargs):
