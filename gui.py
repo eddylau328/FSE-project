@@ -120,13 +120,13 @@ class GUI:
             self.select_category_window_row_limit = 6
 
             # window size of the add_category popup
-            self.add_category_window_width = 500
-            self.add_category_window_height = 250
+            self.add_category_window_width = 900
+            self.add_category_window_height = 500
             self.add_category_bg_frame_width = 870
             self.add_category_bg_frame_height = 470
             self.add_category_bg_padx = 15
             self.add_category_bg_pady = 15
-            self.add_category_category_treeview_width = 50
+            self.add_category_category_treeview_width = 260
             self.add_category_category_treeview_height = 23
             self.add_category_report_treeview_width = 500    ## maintain at this number
             self.add_category_report_treeview_height = 18
@@ -395,6 +395,7 @@ class Show_Data_Package:
         x_coor = (GUI.screen_width / 2) - (w / 2)
         y_coor = (GUI.screen_height / 2) - (h / 2)
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
+        new_window.resizable(0, 0)
         return new_window
 
     def add_checkbutton(self, root, name, row, column, fontsize):
@@ -412,6 +413,7 @@ class Root:
         x_coor = (GUI.screen_width / 2) - (self.window_width / 2)
         y_coor = (GUI.screen_height / 2) - (self.window_height / 2)
         self.root.geometry("%dx%d+%d+%d" % (self.window_width, self.window_height, x_coor, y_coor))
+        self.root.resizable(0, 0)
 
 
 class Checkbutton:
@@ -437,7 +439,10 @@ class Checkbutton:
 class Page(Root):
     def __init__(self):
         Root.__init__(self)
-
+        style = ttk.Style()
+        style.configure("Report.Treeview", rowheight=40)
+        style.configure("Category.Treeview", rowheight=30)
+        style.configure("Root.Treeview", rowheight=25)
         # Heading
         self.heading = tk.Label(self.root, text="Files Search Engine", font=('Arial', 32), height=1)
         self.heading.grid(row=1, column=1, columnspan=10, sticky="W",padx=GUI.main_frame_outside_padx, pady=GUI.main_frame_outside_pady)
@@ -466,19 +471,19 @@ class Page(Root):
         self.search_entry.bind('<Return>', lambda event: self.search())
 
         # add button
-        self.add_button = tk.Button(self.search_title, text="Add / Delete / Modify Files", command=lambda: self.add_delete_modify_files())
+        self.add_button = tk.Button(self.search_title, text="Edit Files", command=self.add_delete_modify_files)
         self.add_button.grid(row=4, column=12, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         # add category button
-        self.add_category_button = tk.Button(self.search_title, text="Add Category", command=lambda: self.add_category())
+        self.add_category_button = tk.Button(self.search_title, text="Edit Category", command= self.add_category)
         self.add_category_button.grid(row=4,column=13, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial', 16))
         self.result_title.grid(row=5, column=1, rowspan=100, columnspan=10, padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
         # table
-        self.treeview = ttk.Treeview(self.result_title, height=28, selectmode="browse")
+        self.treeview = ttk.Treeview(self.result_title, height=23, selectmode="browse", style="Root.Treeview")
         #self.treeview.grid(row=6, column=1, rowspan=100, columnspan=10)
-        self.treeview.pack(side="left", expand=True, fill=tk.Y)
+        self.treeview.pack(side="left", fill=tk.Y)
         # set up the columns and headings
         self.treeview["columns"] = ["title", "filename", "creator", "last_modify", "category"]
         self.treeview["show"] = "headings"
@@ -587,88 +592,99 @@ class Page(Root):
         self.current_filepath_list = []
         # use to save the selected category in the add_category
         self.current_select_category = None
+        # use to save the add_category_window once it is clicked open, preventing multiple same window
+        self.add_category_window = None
+        # use to save the add_delete_modify_window once it is clicked open, preventing multiple same window
+        self.add_delete_modify_window = None
 
+        # closing new_window event which is reseting the temporary saving window object
+        self.root.protocol("WM_DELETE_WINDOW", lambda: self.close_root_window())
         print("GUI display is ready")
-
         # Keep updating the GUI
         self.root.mainloop()
+
+    def close_root_window(self):
+        self.checkbuttons = []
+        self.root.destroy()
 
     # add category window will be pop up after clicking add category button
     def add_category(self):
         # create window
-        new_window = self.create_window(GUI.add_category_window_width, GUI.add_category_window_height)
-        # canvas for the window
-        canvas = tk.Canvas(new_window)
-        canvas.pack(fill=tk.BOTH, expand=1)
-        # frame on the bg
-        frame = tk.Frame(canvas)
-        canvas.create_window((0,0), window=frame, anchor="nw")
+        if (self.add_category_window == None):
+            self.add_category_window = self.create_window(GUI.add_category_window_width, GUI.add_category_window_height)
+            # canvas for the window
+            canvas = tk.Canvas(self.add_category_window)
+            canvas.pack(fill=tk.BOTH, expand=1)
+            # frame on the bg
+            frame = tk.Frame(canvas)
+            canvas.create_window((0,0), window=frame, anchor="nw")
 
-        bg_label_frame = tk.LabelFrame(frame,width=GUI.add_category_bg_frame_width, height=GUI.add_category_bg_frame_height)
-        bg_label_frame.pack(padx=GUI.add_category_bg_padx, pady=GUI.add_category_bg_pady)
-        bg_label_frame.pack_propagate(0)
+            bg_label_frame = tk.LabelFrame(frame,width=GUI.add_category_bg_frame_width, height=GUI.add_category_bg_frame_height)
+            bg_label_frame.pack(padx=GUI.add_category_bg_padx, pady=GUI.add_category_bg_pady)
+            bg_label_frame.pack_propagate(0)
 
-        # left
-        # label frame to hold all the left stuff
-        left_label_frame = tk.LabelFrame(bg_label_frame, text="Category List")
-        left_label_frame.pack(side="left",padx=10,pady=5)
-        style = ttk.Style(new_window)
-        style.configure('Category.Treeview', rowheight=20)
-        category_treeview = ttk.Treeview(left_label_frame, height=GUI.add_category_category_treeview_height, selectmode="browse", style='Category.Treeview')
-        category_treeview.pack(side="top", padx=6, pady=5)
-        category_treeview["columns"] = ["category"]
-        category_treeview["show"] = "headings"
-        category_treeview.heading("category", text="Category Name")
-        category_treeview.column("category", width=GUI.add_category_category_treeview_width)
-        # name is tuple
-        for name in database.get_category():
-            category_treeview.insert("","end",name[0], values=(name[0],))
+            # left
+            # label frame to hold all the left stuff
+            left_label_frame = tk.LabelFrame(bg_label_frame, text="Category List")
+            left_label_frame.pack(side="left",padx=10,pady=5)
+            category_treeview = ttk.Treeview(left_label_frame, height=GUI.add_category_category_treeview_height, selectmode="browse", style="Category.Treeview")
+            category_treeview.pack(side="top", padx=6, pady=5)
+            category_treeview["columns"] = ["category"]
+            category_treeview["show"] = "headings"
+            category_treeview.heading("category", text="Category Name")
+            category_treeview.column("category", width=GUI.add_category_category_treeview_width)
+            # name is tuple
+            for name in database.get_category():
+                category_treeview.insert("","end",name[0], values=(name[0],))
 
-        # add category button and delete category button
-        add_category_button = tk.Button(left_label_frame, text="+", command=None)
-        delete_category_button = tk.Button(left_label_frame, text="-", command=None)
-        delete_category_button.pack(side="right", padx=2,pady=2)
-        add_category_button.pack(side="right", padx=2,pady=2)
+            # add category button and delete category button
+            add_category_button = tk.Button(left_label_frame, text="+", command=None)
+            delete_category_button = tk.Button(left_label_frame, text="-", command=None)
+            delete_category_button.pack(side="right", padx=2,pady=2)
+            add_category_button.pack(side="right", padx=2,pady=2)
 
-        # right
-        # right frame to hold all the right stuff
-        right_label_frame = tk.Frame(bg_label_frame)
-        right_label_frame.pack(side="right", fill=tk.Y)
-        # right top frame
-        right_top_frame = tk.LabelFrame(right_label_frame, text="New")
-        right_top_frame.pack(side="top", fill=tk.X, padx=10, pady=5)
-        # category title
-        category_title = tk.Label(right_top_frame, text="Category Name :")
-        category_title.grid(row=0, column=0, sticky="W", padx=10, pady=4)
-        category_id = tk.StringVar()
-        category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
-        category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
-        update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id))
-        update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
-        # right bottom frame
-        right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
-        right_bottom_frame.pack(side="bottom", fill=tk.X, padx=10, pady=5)
-        # report treeview
-        style.configure('Report.Treeview', rowheight=40)
-        report_treeview = ttk.Treeview(right_bottom_frame, selectmode="browse", height=GUI.add_category_report_treeview_height, style='Report.Treeview')
-        report_treeview.pack( padx=4, pady=4)
-        # set up the columns and headings
-        report_treeview["columns"] = ["action", "details", "category_name"]
-        report_treeview["show"] = "headings"
-        report_treeview.heading("action", text="Action")
-        report_treeview.heading("details", text="Details")
-        report_treeview.heading("category_name", text="Category Name")
-        report_treeview.column("action", width=GUI.add_category_report_treeview_column_1_w)
-        report_treeview.column("details", width=GUI.add_category_report_treeview_column_2_w)
-        report_treeview.column("category_name", width=GUI.add_category_report_treeview_column_3_w)
+            # right
+            # right frame to hold all the right stuff
+            right_label_frame = tk.Frame(bg_label_frame)
+            right_label_frame.pack(side="right", fill=tk.Y)
+            # right top frame
+            right_top_frame = tk.LabelFrame(right_label_frame, text="New")
+            right_top_frame.pack(side="top", fill=tk.X, padx=10, pady=5)
+            # category title
+            category_title = tk.Label(right_top_frame, text="Category Name :")
+            category_title.grid(row=0, column=0, sticky="W", padx=10, pady=4)
+            category_id = tk.StringVar()
+            category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
+            category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
+            update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id))
+            update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
+            # right bottom frame
+            right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
+            right_bottom_frame.pack(side="bottom", fill=tk.X, padx=10, pady=5)
+            # report treeview
+            report_treeview = ttk.Treeview(right_bottom_frame, selectmode="browse", height=GUI.add_category_report_treeview_height, style='Report.Treeview')
+            report_treeview.pack( padx=4, pady=4)
+            # set up the columns and headings
+            report_treeview["columns"] = ["action", "details", "category_name"]
+            report_treeview["show"] = "headings"
+            report_treeview.heading("action", text="Action")
+            report_treeview.heading("details", text="Details")
+            report_treeview.heading("category_name", text="Category Name")
+            report_treeview.column("action", width=GUI.add_category_report_treeview_column_1_w)
+            report_treeview.column("details", width=GUI.add_category_report_treeview_column_2_w)
+            report_treeview.column("category_name", width=GUI.add_category_report_treeview_column_3_w)
 
-        for i in range(0, 4):
-            report_treeview.insert("", i,f"action{i}", values=(f"Play{i}", "Nothing", f"Name{i}"))
-        report_treeview.insert("", 0, f"action100", values=("test", "test", "test"))
+            for i in range(0, 4):
+                report_treeview.insert("", i,f"action{i}", values=(f"Play{i}", "Nothing", f"Name{i}"))
+            report_treeview.insert("", 0, f"action100", values=("test", "test", "test"))
 
-        # add clicking event in category treeview
-        category_treeview.bind('<Double-1>', lambda event,treeview=category_treeview, entry_id=category_id: self.click_category_treeview_item(treeview, entry_id))
-        # add clicking event in report treeview
+            # add clicking event in category treeview
+            category_treeview.bind('<Double-1>', lambda event,treeview=category_treeview, entry_id=category_id: self.click_category_treeview_item(treeview, entry_id))
+            # add clicking event in report treeview
+            # closing new_window event which is reseting the temporary saving window object
+            self.add_category_window.protocol("WM_DELETE_WINDOW", self.close_add_category_window)
+        else:
+            self.add_category_window.lift()
 
 
     def click_category_update_button(self, entry_id):
@@ -682,6 +698,11 @@ class Page(Root):
                 database.update_category(original=original, new=new)
                 self.update_main_frame_checkbuttons()
 
+
+
+    def close_add_category_window(self):
+        self.add_category_window.destroy()
+        self.add_category_window = None
 
     def update_main_frame_checkbuttons(self):
         self.checkbuttons = []
@@ -767,100 +788,104 @@ class Page(Root):
         x_coor = (GUI.screen_width / 2) - (w / 2)
         y_coor = (GUI.screen_height / 2) - (h / 2)
         new_window.geometry("%dx%d+%d+%d" % (w, h, x_coor, y_coor))
+        new_window.resizable(0,0)
         return new_window
 
 
     # Add / delete / modify files Window
     def add_delete_modify_files(self):
-        new_window = self.create_window(GUI.modify_width, GUI.modify_height)
+        if (self.add_delete_modify_window == None):
+            self.add_delete_modify_window = self.create_window(GUI.modify_width, GUI.modify_height)
+            # frame is used to contain everything
+            bg_frame = tk.Frame(self.add_delete_modify_window)
+            bg_frame.pack(fill=tk.BOTH)
 
+            right_frame = tk.LabelFrame(bg_frame, text="")
+            right_frame.pack(side="left", fill=tk.Y)
+            # skip some spaces in both dir in right_frame
+            right_frame.grid_rowconfigure(0, minsize=10)
+            right_frame.grid_columnconfigure(0, minsize=10)
 
-        # frame is used to contain everything
-        right_frame = tk.LabelFrame(new_window, text="")
-        right_frame.pack(side="left", fill=tk.Y)
+            change_title = tk.Label(right_frame, text="Temporary", font=('Arial', 12))
+            change_title.grid(row=1, column=1)
 
-        # skip some spaces in both dir in right_frame
-        right_frame.grid_rowconfigure(0, minsize=10)
-        right_frame.grid_columnconfigure(0, minsize=10)
+            change_listbox = tk.Listbox(right_frame, selectmode="extended", width=GUI.modify_listbox_width, height=25)
+            change_listbox.grid(row=2, column=1, rowspan=25)
 
-        change_title = tk.Label(right_frame, text="Temporary", font=('Arial', 12))
-        change_title.grid(row=1, column=1)
+            current_title = tk.Label(right_frame, text="Current Database", font=('Arial', 12))
+            current_title.grid(row=1, column=3)
 
-        change_listbox = tk.Listbox(right_frame, selectmode="extended", width=GUI.modify_listbox_width, height=25)
-        change_listbox.grid(row=2, column=1, rowspan=25)
+            current_listbox = tk.Listbox(right_frame, selectmode="extended", width=GUI.modify_listbox_width, height=25)
+            current_listbox.grid(row=2, column=3, rowspan=25)
+            for data in database.get(select_field=['filepath']):
+                self.current_filepath_list.append(data.get('filepath'))
+                current_listbox.insert("end", f"{database.extract_filename(data.get('filepath'))}")
 
-        current_title = tk.Label(right_frame, text="Current Database", font=('Arial', 12))
-        current_title.grid(row=1, column=3)
+            # browse button is used to browse file to open in change_listbox
+            browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(self.add_delete_modify_window, change_listbox))
+            browse_button.grid(row=28, column=1, columnspan=2, sticky="W")
 
-        current_listbox = tk.Listbox(right_frame, selectmode="extended", width=GUI.modify_listbox_width, height=25)
-        current_listbox.grid(row=2, column=3, rowspan=25)
-        for data in database.get(select_field=['filepath']):
-            self.current_filepath_list.append(data.get('filepath'))
-            current_listbox.insert("end", f"{database.extract_filename(data.get('filepath'))}")
+            # skip some spaces in both dir in right_frame
+            right_frame.grid_columnconfigure(4, minsize=10)
 
-        # browse button is used to browse file to open in change_listbox
-        browse_button = tk.Button(right_frame, text="Browse file", font=('Arial', 12), command=lambda: self.click_browse(new_window, change_listbox))
-        browse_button.grid(row=28, column=1, columnspan=2, sticky="W")
+            # left frame is the frame to contains the data of the file
+            left_frame = tk.LabelFrame(bg_frame, text="")
+            left_frame.pack(side="right", fill=tk.Y)
 
-        # skip some spaces in both dir in right_frame
-        right_frame.grid_columnconfigure(4, minsize=10)
+            left_frame_canvas = tk.Canvas(left_frame)
+            # history_scrollbar
+            left_frame_scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=left_frame_canvas.yview)
+            left_frame_canvas.config(yscrollcommand=left_frame_scrollbar.set)
+            left_frame_scrollbar.pack(side="right", fill=tk.Y)
 
-        # left frame is the frame to contains the data of the file
-        left_frame = tk.LabelFrame(new_window, text="")
-        left_frame.pack(side="right", fill=tk.Y)
+            canvas_inner_frame = tk.Frame(left_frame_canvas)
 
-        left_frame_canvas = tk.Canvas(left_frame)
-        # history_scrollbar
-        left_frame_scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=left_frame_canvas.yview)
-        left_frame_canvas.config(yscrollcommand=left_frame_scrollbar.set)
-        left_frame_scrollbar.pack(side="right", fill=tk.Y)
+            left_frame_canvas.create_window((0,0), window=canvas_inner_frame, anchor="nw")
+            left_frame_canvas.pack(side="left", fill=tk.Y)
+            canvas_inner_frame.bind("<Configure>", lambda event,canvas=left_frame_canvas : self.onFrameConfigure(canvas))
+            # hide it first
+            left_frame.pack_forget()
 
-        canvas_inner_frame = tk.Frame(left_frame_canvas)
+            data_package = Show_Data_Package(canvas_inner_frame)
+            data_package.show_name(row=0, column=1)
+            data_package.show_creator(row=1, column=1)
+            data_package.show_category(row=2, column=1)
+            data_package.show_filename(row=3, column=1)
+            data_package.show_filepath(row=4, column=1)
+            data_package.show_description(row=5, column=1)
+            data_package.show_last_modify(row=6, column=1)
+            data_package.show_create_date(row=7, column=1)
+            # delete button is used to delete file in change_listbox
+            delete_button = tk.Button(right_frame, text="Delete file", font=('Arial', 12), command=lambda: self.click_delete(left_frame, data_package, change_listbox))
+            delete_button.grid(row=28, column=1, sticky="E")
 
-        left_frame_canvas.create_window((0,0), window=canvas_inner_frame, anchor="nw")
-        left_frame_canvas.pack(side="left", fill=tk.Y)
-        canvas_inner_frame.bind("<Configure>", lambda event,canvas=left_frame_canvas : self.onFrameConfigure(canvas))
-        # hide it first
-        left_frame.pack_forget()
+            # update button is used to update the data of the file
+            update_button = tk.Button(canvas_inner_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
+            update_button.grid(row=8, column=1, columnspan=3, pady=10)
+            update_button.grid_forget()
+            # save button is used to save the data currently
+            save_button = tk.Button(canvas_inner_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
+            save_button.grid(row=8, column=1, columnspan=3, pady=10)
+            save_button.grid_forget()
 
-        data_package = Show_Data_Package(canvas_inner_frame)
-        data_package.show_name(row=0, column=1)
-        data_package.show_creator(row=1, column=1)
-        data_package.show_category(row=2, column=1)
-        data_package.show_filename(row=3, column=1)
-        data_package.show_filepath(row=4, column=1)
-        data_package.show_description(row=5, column=1)
-        data_package.show_last_modify(row=6, column=1)
-        data_package.show_create_date(row=7, column=1)
-        # delete button is used to delete file in change_listbox
-        delete_button = tk.Button(right_frame, text="Delete file", font=('Arial', 12), command=lambda: self.click_delete(left_frame, data_package, change_listbox))
-        delete_button.grid(row=28, column=1, sticky="E")
+            # binding the double click event to the current listbox
+            # search_filename -> get it from the curselection from the current_listbox
+            current_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=current_listbox, data_package=data_package: self.click_current_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
 
-        # update button is used to update the data of the file
-        update_button = tk.Button(canvas_inner_frame, text="Update", font=('Arial', 12), command=lambda: self.click_update(data_package))
-        update_button.grid(row=8, column=1, columnspan=3, pady=10)
-        update_button.grid_forget()
-        # save button is used to save the data currently
-        save_button = tk.Button(canvas_inner_frame, text="Save", font=('Arial', 12), command=lambda: self.click_save(data_package, change_listbox))
-        save_button.grid(row=8, column=1, columnspan=3, pady=10)
-        save_button.grid_forget()
+            # binding the double click event to the current listbox
+            # search_filename -> get it from the curselection from the current_listbox
+            change_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=change_listbox, data_package=data_package: self.click_change_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
 
-        # binding the double click event to the current listbox
-        # search_filename -> get it from the curselection from the current_listbox
-        current_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=current_listbox, data_package=data_package: self.click_current_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
+            # move left / right button is used to shift things to database or delete things to database
+            move_in_button = tk.Button(right_frame, text="=>", width=2, height=1, command=lambda: self.click_move_in(left_frame, data_package, change_listbox, current_listbox))
+            move_in_button.grid(row=13, column=2, padx=5)
+            move_out_button = tk.Button(right_frame, text="<=", width=2, height=1, command=lambda: self.click_move_out(left_frame, data_package, change_listbox, current_listbox))
+            move_out_button.grid(row=14, column=2, padx=5)
 
-        # binding the double click event to the current listbox
-        # search_filename -> get it from the curselection from the current_listbox
-        change_listbox.bind('<Double-1>', lambda event, left_frame=left_frame, update_button=update_button, save_button=save_button, listbox=change_listbox, data_package=data_package: self.click_change_listbox_item(event, left_frame, update_button, save_button, listbox, data_package))
-
-        # move left / right button is used to shift things to database or delete things to database
-        move_in_button = tk.Button(right_frame, text="=>", width=2, height=1, command=lambda: self.click_move_in(left_frame, data_package, change_listbox, current_listbox))
-        move_in_button.grid(row=13, column=2, padx=5)
-        move_out_button = tk.Button(right_frame, text="<=", width=2, height=1, command=lambda: self.click_move_out(left_frame, data_package, change_listbox, current_listbox))
-        move_out_button.grid(row=14, column=2, padx=5)
-
-        # closing new_window event which is clearing all the obj inside self.temporary_obj_list
-        new_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_delete_modify_files_window(new_window))
+            # closing new_window event which is clearing all the obj inside self.temporary_obj_list
+            self.add_delete_modify_window.protocol("WM_DELETE_WINDOW", lambda: self.close_add_delete_modify_files_window())
+        else:
+            self.add_delete_modify_window.lift()
 
 
     def onFrameConfigure(self, canvas):
@@ -868,12 +893,11 @@ class Page(Root):
 
 
     # this is used to clear out all the things inside the temporary obj list
-    def close_add_delete_modify_files_window(self, new_window):
-        for obj in self.temporary_obj_list:
-            print(obj['data'].get())
+    def close_add_delete_modify_files_window(self):
         self.temporary_obj_list = []
         self.current_filepath_list = []
-        new_window.destroy()
+        self.add_delete_modify_window.destroy()
+        self.add_delete_modify_window = None
 
 
     def click_current_listbox_item(self, event, left_frame, update_button, save_button, listbox, data_package):
@@ -1282,7 +1306,7 @@ database.add(title="C Solar Panel 1", filepath="files"+file_sep+"solar_panel_pro
 database.add(title="A Solar Panel 2", filepath="files"+file_sep+"solar_panel_proposal_2e.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 database.add(title="B Solar Panel 3", filepath="files"+file_sep+"solar_panel_proposal_3f.txt", category="secret, vehicle,renewable energy", creator=creators[random.randint(0, 2)])
 
-for i in range(1, 10):
+for i in range(1, 100):
     database.add(title=f"{i} Solar Panel", filepath=f"files{file_sep}solar_panel_proposal_{i}.txt", category="renewable energy", creator=creators[random.randint(0, 2)])
 
 database.add(title="D Smart Lighting", filepath="files"+file_sep+"smart_lighting.pdf", category="smart device")
