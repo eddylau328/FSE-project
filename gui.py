@@ -35,7 +35,8 @@ class GUI:
             self.main_frame_outside_pady = 20
             self.main_frame_inline_padx = 5
             self.main_frame_inline_pady = 5
-
+            self.main_frame_title_font = ('Arial', 12)
+            self.main_frame_button_font = ('Arial', 12)
             # treeview column width
             self.treeview_width_title = 150
             self.treeview_width_filename = 200
@@ -98,7 +99,8 @@ class GUI:
             self.main_frame_outside_pady = 15
             self.main_frame_inline_padx = 5
             self.main_frame_inline_pady = 5
-
+            self.main_frame_title_font = ('Arial', 12)
+            self.main_frame_button_font = ('Arial', 12)
             # treeview column width
             self.treeview_width_title = 150
             self.treeview_width_filename = 200
@@ -464,18 +466,18 @@ class Page(Root):
         self.search_entry.grid(row=4, column=2, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         # search button
-        self.search_button = tk.Button(self.search_title, text="Search", font=('Arial', 12), command=self.search)
+        self.search_button = tk.Button(self.search_title, text="Search", font=GUI.main_frame_button_font, command=self.search)
         self.search_button.grid(row=4, column=3, sticky="W", pady=GUI.main_frame_inline_pady)
 
         # bind the [enter button], which make it more easy to input search
         self.search_entry.bind('<Return>', lambda event: self.search())
 
         # add button
-        self.add_button = tk.Button(self.search_title, text="Edit Files", command=self.add_delete_modify_files)
+        self.add_button = tk.Button(self.search_title, text="Edit Files", font=GUI.main_frame_button_font,command=self.add_delete_modify_files)
         self.add_button.grid(row=4, column=12, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         # add category button
-        self.add_category_button = tk.Button(self.search_title, text="Edit Category", command= self.add_category)
+        self.add_category_button = tk.Button(self.search_title, text="Edit Category", font=GUI.main_frame_button_font,command= self.add_category)
         self.add_category_button.grid(row=4,column=13, sticky="W", padx=GUI.main_frame_inline_padx, pady=GUI.main_frame_inline_pady)
 
         self.result_title = tk.LabelFrame(self.search_title, text="Results", font=('Arial', 16))
@@ -524,13 +526,13 @@ class Page(Root):
         self.filter_i_radiobutton.grid(row=row, column=column + 1, sticky="W")
         # filter button for the database to perform sorting
         row += 1
-        self.filter_button = tk.Button(self.filter_title, text="Filter", font=('Arial', 12), command=lambda: self.filter(self.filter_radiobutton_id.get()))
+        self.filter_button = tk.Button(self.filter_title, text="Filter", font=GUI.main_frame_button_font, command=lambda: self.filter(self.filter_radiobutton_id.get()))
         self.filter_button.grid(row=row, column=column, sticky="W")
 
         # disable all/ select all button for the checkbox in filter section
         self.filter_select_disable_id = tk.StringVar()
         self.filter_select_disable_id.set("Disable all")
-        self.filter_select_disable_button = tk.Button(self.filter_title, textvariable=self.filter_select_disable_id, font=('Arial', 12), command=self.filter_checkbox_select_disable_all, width=10)
+        self.filter_select_disable_button = tk.Button(self.filter_title, textvariable=self.filter_select_disable_id, font=GUI.main_frame_button_font, command=self.filter_checkbox_select_disable_all, width=10)
         self.filter_select_disable_button.grid(row=row, column=column + 1, sticky="W")
 
         # tab control for changing the page
@@ -656,7 +658,7 @@ class Page(Root):
             category_id = tk.StringVar()
             category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
             category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
-            update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id))
+            update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id, category_treeview))
             update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
             # right bottom frame
             right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
@@ -687,7 +689,7 @@ class Page(Root):
             self.add_category_window.lift()
 
 
-    def click_category_update_button(self, entry_id):
+    def click_category_update_button(self, entry_id, category_treeview):
         new = entry_id.get()
         original = self.current_select_category
         if (new != original):
@@ -695,14 +697,24 @@ class Page(Root):
             if (result['conflict'] == True):
                 print(result['conflict_data'])
             else:
+                # update category table in the database
                 database.update_category(original=original, new=new)
+                # update the main frame checkbuttons that is used to do the filter
                 self.update_main_frame_checkbuttons()
-
+                # find the position that in the category treeview for delete and insert
+                insert_index = category_treeview.index(original)
+                category_treeview.delete(original)
+                # get the new name from the database but not in gui.py, preventing the inconsistent of the data from the database and the gui.py
+                insert_name = database.get_category(new)[0]
+                category_treeview.insert("", insert_index, insert_name, values=(insert_name,))
+                # updating the current_select_catory saving name, as it is updated
+                self.current_select_category = insert_name
 
 
     def close_add_category_window(self):
         self.add_category_window.destroy()
         self.add_category_window = None
+
 
     def update_main_frame_checkbuttons(self):
         self.checkbuttons = []

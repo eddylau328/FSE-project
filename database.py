@@ -232,10 +232,17 @@ class Database:
             return
 
     # get the categories designed by the users
-    def get_category(self):
-        with self.conn:
-            self.c.execute("SELECT * FROM category_list")
-            return self.c.fetchall()
+    def get_category(self, specific=None):
+        if (specific != None):
+            with self.conn:
+                self.c.execute("SELECT * FROM category_list WHERE category=? COLLATE NOCASE", (specific,))
+                result = self.c.fetchone()
+                print(result)
+                return result
+        else:
+            with self.conn:
+                self.c.execute("SELECT * FROM category_list")
+                return self.c.fetchall()
 
     def delet_category(self, category):
         with self.conn:
@@ -262,7 +269,7 @@ class Database:
 
     def update_category(self, original, new):
         with self.conn:
-            self.c.execute("UPDATE category_list SET category=? WHERE category=?", (new, original))
+            self.c.execute("UPDATE category_list SET category=? WHERE category=?", (new.casefold(), original.casefold()))
 
     # adding files detail to the files_table in the database
     def add(self, **kwargs):
