@@ -251,12 +251,13 @@ class Database:
 
     def check_category_conflict(self, original):
         with self.conn:
-            self.c.execute("SELECT title, filename, category FROM files_table WHERE category LIKE ?", ('%' + original + '%',))
+            self.c.execute("SELECT title, filepath, category FROM files_table WHERE category LIKE ?", ('%' + original + '%',))
             result = self.c.fetchall()
+            format_result = self.format_dataset_to_dictionary(result, ['title', 'filepath', 'category'])
         if (len(result) > 0):
-            return {'conflict_data':result, 'conflict': True}
+            return {'conflict_data':format_result, 'conflict': True}
         else:
-            return {'conflict_data':result, 'conflict': False}
+            return {'conflict_data':format_result, 'conflict': False}
 
     def check_category_exist(self, new_category):
         currentCategory = self.get_category()

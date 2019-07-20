@@ -8,7 +8,11 @@ import sys
 
 class GUI:
     def __init__(self, os_platform):
+        self.creator_of_FSE = "Eddy Lau"
+
         if (os_platform == "OS X"):
+            self.window_width = 1360
+            self.window_height = 800
 
             self.filter_checkbutton_fontsize = 12
 
@@ -74,6 +78,9 @@ class GUI:
 
         elif (os_platform == "Windows"):
 
+            self.window_width = 1360
+            self.window_height = 820
+
             self.filter_checkbutton_fontsize = 9
 
             # Modify FILES POPUP WINDOW CONSTANT
@@ -131,10 +138,9 @@ class GUI:
             self.add_category_category_treeview_width = 260
             self.add_category_category_treeview_height = 23
             self.add_category_report_treeview_width = 500    ## maintain at this number
-            self.add_category_report_treeview_height = 18
-            self.add_category_report_treeview_column_1_w = 60
-            self.add_category_report_treeview_column_2_w = 280
-            self.add_category_report_treeview_column_3_w = 160
+            self.add_category_report_treeview_height = 15
+            self.add_category_report_treeview_column_1_w = 120
+            self.add_category_report_treeview_column_2_w = self.add_category_report_treeview_width-self.add_category_report_treeview_column_1_w
 
 
 def get_platform():
@@ -408,8 +414,8 @@ class Root:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Files Search Engine")
-        self.window_width = 1360
-        self.window_height = 800
+        self.window_width = GUI.window_width
+        self.window_height = GUI.window_height
         GUI.screen_width = self.root.winfo_screenwidth()
         GUI.screen_height = self.root.winfo_screenheight()
         x_coor = (GUI.screen_width / 2) - (self.window_width / 2)
@@ -450,7 +456,7 @@ class Page(Root):
         self.heading.grid(row=1, column=1, columnspan=10, sticky="W",padx=GUI.main_frame_outside_padx, pady=GUI.main_frame_outside_pady)
 
         # creator of the program
-        self.inventor_of_program = tk.Label(self.root, text="Created by Eddy Lau", font=('Arial', 10), fg="grey")
+        self.inventor_of_program = tk.Label(self.root, text=f"Created by {GUI.creator_of_FSE}", font=('Arial', 10), fg="grey")
         self.inventor_of_program.grid(row=5, column=1, sticky="E")
 
         # search title
@@ -658,28 +664,35 @@ class Page(Root):
             category_id = tk.StringVar()
             category_entry = tk.Entry(right_top_frame, textvariable=category_id, width=40)
             category_entry.grid(row=0, column=1, sticky="W", padx=10, pady=4)
-            update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id, category_treeview))
-            update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
+
             # right bottom frame
             right_bottom_frame = tk.LabelFrame(right_label_frame, text="Report")
             right_bottom_frame.pack(side="bottom", fill=tk.X, padx=10, pady=5)
             # report treeview
-            report_treeview = ttk.Treeview(right_bottom_frame, selectmode="browse", height=GUI.add_category_report_treeview_height, style='Report.Treeview')
+            report_treeview = ttk.Treeview(right_bottom_frame, selectmode="extended", height=GUI.add_category_report_treeview_height)
             report_treeview.pack( padx=4, pady=4)
             # set up the columns and headings
-            report_treeview["columns"] = ["action", "details", "category_name"]
-            report_treeview["show"] = "headings"
-            report_treeview.heading("action", text="Action")
-            report_treeview.heading("details", text="Details")
-            report_treeview.heading("category_name", text="Category Name")
-            report_treeview.column("action", width=GUI.add_category_report_treeview_column_1_w)
-            report_treeview.column("details", width=GUI.add_category_report_treeview_column_2_w)
-            report_treeview.column("category_name", width=GUI.add_category_report_treeview_column_3_w)
+            report_treeview["columns"] = ["conflict", "category"]
+            report_treeview["show"] = "tree"
+            report_treeview.heading("conflict", text="Conflict Files Title")
+            report_treeview.heading("category", text="Category Name")
+            report_treeview.column("#0", width=20)
+            report_treeview.column("conflict", width=GUI.add_category_report_treeview_column_1_w)
+            report_treeview.column("category", width=GUI.add_category_report_treeview_column_2_w)
 
-            for i in range(0, 4):
-                report_treeview.insert("", i,f"action{i}", values=(f"Play{i}", "Nothing", f"Name{i}"))
-            report_treeview.insert("", 0, f"action100", values=("test", "test", "test"))
+            update_button = tk.Button(right_top_frame, text="Update", command=lambda: self.click_category_update_button(category_id, report_treeview))
+            update_button.grid(row=1, column=1, sticky="E", padx=10, pady=4)
 
+            replace_all_button = tk.Button(right_bottom_frame, text="Replace All", command=None)
+            replace_all_button.pack(side="left", padx=4)
+            delete_all_button = tk.Button(right_bottom_frame, text="Remove All", command=None)
+            delete_all_button.pack(side="left", padx=4)
+            replace_select_button = tk.Button(right_bottom_frame, text="Replace Selected", command=None)
+            replace_select_button.pack(side="left", padx=4)
+            delete_select_button = tk.Button(right_bottom_frame, text="Remove Selected", command=None)
+            delete_select_button.pack(side="left", padx=4)
+            edit_button = tk.Button(right_bottom_frame, text="Edit", command=None)
+            edit_button.pack(side="left", padx=4)
             # add clicking event in category treeview
             category_treeview.bind('<Double-1>', lambda event,treeview=category_treeview, entry_id=category_id: self.click_category_treeview_item(treeview, entry_id))
             # add clicking event in report treeview
@@ -689,13 +702,24 @@ class Page(Root):
             self.add_category_window.lift()
 
 
-    def click_category_update_button(self, entry_id, category_treeview):
+    def click_solve_conflict(self, solve_type):
+        if (solve_type == type)
+
+
+    def click_category_update_button(self, entry_id, report_treeview):
         new = entry_id.get()
         original = self.current_select_category
+
+        report_treeview.delete(*report_treeview.get_children())
+
         if (new != original):
             result = database.check_category_conflict(original)
             if (result['conflict'] == True):
-                print(result['conflict_data'])
+                num_of_conflicts = len(result['conflict_data'])
+                report_treeview.insert("", 0, iid="conflict_holder",values=(f"{num_of_conflicts} Conflicts",), open = True)
+                for obj in result['conflict_data']:
+                    report_treeview.insert("conflict_holder", "end", obj['filepath'], values=(obj['title'], obj['category']))
+
             else:
                 # update category table in the database
                 database.update_category(original=original, new=new)
